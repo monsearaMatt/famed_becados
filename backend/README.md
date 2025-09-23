@@ -25,74 +25,190 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Project setup
+# Ficha Académica FAMED — Backend (Monorepo)
+
+Este repositorio contiene el backend para la plataforma de Seguimiento Académico de Especialidades Médicas (FAMED). El sistema está diseñado bajo una arquitectura de microservicios para garantizar escalabilidad, modularidad y separación de responsabilidades.
+
+**Estado:** rama `feature/auth-microservice` (trabajo en progreso). Este README es una guía para desarrollar y arrancar el entorno local de desarrollo.
+
+## Índice
+
+- Descripción
+- Arquitectura
+- Microservicios
+- Stack tecnológico
+- Prerrequisitos
+- Instalación rápida
+- Variables de entorno
+- Ejecución (local / Docker)
+- Tests
+- Estructura del proyecto
+- Buenas prácticas y notas
+- Posibles mejoras
+- Licencia
+
+## Descripción
+
+El objetivo de este proyecto es proporcionar una plataforma que centralice y simplifique el seguimiento académico de los médicos becados de la Facultad de Medicina. La solución ofrece una "Ficha Académica Digital" accesible, segura y fácil de usar para becados y supervisores.
+
+## Arquitectura
+
+Proyecto organizado como un monorepo con múltiples aplicaciones NestJS (una por microservicio). La comunicación entre microservicios utiliza RPC a través de NATS. Cada servicio puede tener su propia base de datos según el tipo de datos y las necesidades:
+
+- `api-gateway`: punto de entrada HTTP y WebSockets, enruta a microservicios.
+- `auth-service`: gestión de usuarios, autenticación y roles (PostgreSQL).
+- `fichas-service`: lógica principal de fichas académicas (MongoDB).
+- `files-service`: almacenamiento y acceso a archivos (MinIO / S3).
+
+## Microservicios y responsabilidades
+
+Servicio | Responsabilidad | Base de Datos
+--- | --- | ---
+`api-gateway` | Enrutamiento HTTP/WS hacia microservicios | -
+`auth-service` | Registro, login, perfiles, roles, JWT | PostgreSQL (TypeORM)
+`fichas-service` | Procedimientos, evaluaciones, secciones y reglas de negocio | MongoDB (Mongoose)
+`files-service` | Subida/descarga y gestión de archivos (evidencias) | MinIO (S3)
+
+## Stack Tecnológico
+
+- Framework: NestJS (TypeScript)
+- Gestor de paquetes: PNPM
+- Contenerización: Docker & Docker Compose
+- Mensajería/RPC: NATS
+- Real-time: WebSockets (Socket.IO)
+- Autenticación: JWT y bcrypt
+- Validación: `class-validator` / `class-transformer`
+- ORMs/ODM: TypeORM (Postgres), Mongoose (MongoDB)
+
+## Prerrequisitos
+
+Instala estas herramientas:
+
+- Node.js v18+ (recomendado)
+- PNPM
+- Docker y Docker Compose
+
+## Instalación rápida
+
+1. Clona el repositorio y entra en la carpeta `backend`:
 
 ```bash
-$ pnpm install
+git clone <URL_DEL_REPOSITORIO>
+cd famed_becados/backend
 ```
 
-## Compile and run the project
+2. Instala dependencias (monorepo):
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm install
 ```
 
-## Run tests
+3. Copia los ejemplos de variables de entorno a cada servicio que vayas a ejecutar y complétalos:
 
 ```bash
-# unit tests
-$ pnpm run test
+# Auth service
+cp apps/auth-service/.env.example apps/auth-service/.env
 
-# e2e tests
-$ pnpm run test:e2e
+# API Gateway (si aplica)
+cp apps/api-gateway/.env.example apps/api-gateway/.env || true
 
-# test coverage
-$ pnpm run test:cov
+# Fichas service (si existe)
+cp apps/fichas-service/.env.example apps/fichas-service/.env || true
+
+# Files service (si existe)
+cp apps/files-service/.env.example apps/files-service/.env || true
 ```
 
-## Deployment
+Edita los `.env` generados con las credenciales y secretos adecuados.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Variables de entorno (ejemplo)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Ejemplo mínimo para `auth-service`:
+
+```dotenv
+# PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=tu_usuario_postgres
+DB_PASSWORD=tu_contraseña_postgres
+DB_NAME=auth_db
+
+# JWT
+JWT_SECRET=UN_SECRETO_MUY_LARGO_Y_SEGURO_DE_AL_MENOS_32_CARACTERES
+JWT_EXPIRATION=3600s
+
+# NATS
+NATS_URL=nats://localhost:4222
+```
+
+Cada servicio puede requerir variables adicionales (MinIO, Mongo, etc.). Consulta los `*.module.ts` y `ConfigModule` de cada app para ver todas las variables necesarias.
+
+## Ejecución
+
+Levanta la infraestructura necesaria (Postgres, MongoDB, NATS, MinIO) con Docker Compose:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+docker compose up -d
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Inicia los microservicios en modo desarrollo (una terminal por servicio):
 
-## Resources
+```bash
+# API Gateway
+pnpm --filter api-gateway dev || pnpm --filter @famed/api-gateway dev || nest start api-gateway --watch
 
-Check out a few resources that may come in handy when working with NestJS:
+# Auth Service
+pnpm --filter auth-service dev || pnpm --filter @famed/auth-service dev || nest start auth-service --watch
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Nota: Ajusta los nombres de paquete (`--filter`) según los scripts y alias definidos en `package.json` del monorepo.
 
-## Support
+Ejecución en producción
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Construye y ejecuta las apps dentro de contenedores o usa `pnpm build` y despliega el código compilado. La estrategia exacta depende del entorno de despliegue.
 
-## Stay in touch
+## Tests
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Cada app puede tener pruebas unitarias y e2e bajo su carpeta `test/`. Ejecuta los scripts de test definidos en `package.json` o usa herramientas como `pnpm -w run test` para ejecutar en todo el monorepo (si está configurado).
 
-## License
+Ejemplo (si existe script):
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+pnpm --filter auth-service test
+```
+
+## Estructura del proyecto
+
+Carpeta principal `apps/` con subcarpetas por servicio:
+
+- `apps/api-gateway/`
+- `apps/auth-service/`
+- `apps/fichas-service/`
+- `apps/files-service/`
+
+Otros archivos en la raíz `backend/`:
+
+- `pnpm-lock.yaml`, `package.json` — dependencias y scripts
+- `tsconfig.json`, `tsconfig.build.json` — configuración TypeScript
+- `docker-compose.yml` — orquestación de infra externa
+
+## Buenas prácticas y notas
+
+- Centraliza DTOs y tipos en `libs/` si los microservicios comparten contratos.
+- Usa `ConfigModule` para validación de variables de entorno y `class-validator` para DTOs.
+- Mantén archivos `.env` fuera del control de versiones. Usa `.env.example` para documentar variables necesarias.
+- Añade logs estructurados y métricas si el proyecto escalara a producción.
+
+## Posibles mejoras / siguientes pasos
+
+- Añadir ejemplos de `.env.example` faltantes en cada `apps/*`.
+- Crear scripts en `package.json` para arrancar grupos de servicios (`dev:all`).
+- Documentar contratos RPC (mensajes NATS) y ejemplos de uso.
+
+## Licencia
+
+Indica aquí la licencia del proyecto (por ejemplo: MIT). Si no se define, coordina con el equipo para escoger una.
+
+---
+
+Si quieres que agregue ejemplos de endpoints, snippets de Docker o documentación detallada por servicio (auth, fichas, files), dímelo y lo completo.
