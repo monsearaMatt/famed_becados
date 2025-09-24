@@ -1,88 +1,56 @@
 import React from "react";
 
-export default function cortes() {
+interface columna {
+    id: number;
+    nombre: string;
+}
+
+const columnas: columna[] = [
+    { id: 1, nombre: "Corte 1" },
+    { id: 2, nombre: "Corte 2" },
+    { id: 3, nombre: "Corte 3" },
     
-        return (
-            <div style={{ background: "#EEEEEE", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <nav style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    width: "100%",
-                    padding: "3rem 0",
-                    background: "#3FD0B6",
-                    borderBottom: "8px solid #ddd",
-                    borderRadius: "1.5rem 1.5rem 0 0"
-                }}>
-                    <button style={{
-                        background: "none",
-                        border: "none",
-                        marginRight: "3rem",
-                        cursor: "pointer",
-                        fontSize: "3rem",
-                        width: "5rem",
-                        height: "5rem"
-                    }}>
-                        <span role="img" aria-label="notifications">🔔</span>
-                    </button>
-                    <button style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: "3rem",
-                        width: "5rem",
-                        height: "5rem"
-                    }}>
-                        <span role="img" aria-label="profile">👤</span>
-                    </button>
-                </nav>
-                <div style={{ height: "2rem" }} /> {/* Espacio entre navbar y marco */}
-                <div style={{
-                    background: "#fff",
-                    borderRadius: "2rem",
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-                    padding: "4rem",
-                    width: "calc(100% - 4rem)",
-                    minHeight: "calc(100vh - 12rem)",
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    margin: "0 2rem 2rem 2rem",
-                    position: "relative",
-                    top: "0",
-                    border: "2px solid #4b867b"
-                }}>
-                    <div style={{
-                        display: "flex",
-                        width: "100%",
-                        height: "100%",
-                        gap: "2rem"
-                    }}>
-                        {[1, 2, 3].map((col) => (
-                            <div
-                                key={col}
-                                style={{
-                                    flex: 1,
-                                    background: "#fff",
-                                    borderRadius: "2rem",
-                                    boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-                                    padding: "2rem",
-                                    border: "2px solid #4b867b",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    minHeight: "200px"
-                                }}
-                            >
-                                {/* Contenido columna {col} */}
-                            </div>
-                            
-                        ))}
-                    </div>
+];
+
+export default function Cortes() {
+    return (
+        <div className="bg-[#EEEEEE] min-h-screen flex flex-col items-center">
+            
+            <nav className="flex justify-end items-center w-full  py-12 bg-[#3FD0B6] border-b-8 border-gray-300 rounded-t-3xl">
+               
+                <button
+                    className="bg-none border-none mr-12 cursor-pointer text-6xl w-20 h-20"
+                >
+                    <span role="img" aria-label="notifications">
+                        🔔
+                    </span>
+                </button>
+               
+                <button
+                    className="bg-none border-none cursor-pointer text-6xl w-20 h-20"
+                >
+                    <span role="img" aria-label="profile">
+                        👤
+                    </span>
+                </button>
+            </nav>
+
+           
+            <div className="h-8" /> {/* Spacer */}
+            <div
+                className="bg-white rounded-3xl shadow-lg shadow-gray-200 p-16 w-[calc(100%-4rem)] min-h-screen m-8 relative border-2 border-[#4b867b]"
+            >
+                <div className="grid grid-cols-3 gap-8 justify-start items-start">
+                    {columnas.map(({ id, nombre }) =>(
+                        <div
+                            key={id}
+                            className="flex-1 bg-white rounded-3xl shadow-lg shadow-gray-200 p-8 border-2 border-[#4b867b] flex flex-col items-center justify-center min-h-[200px]"
+                        >
+                             <h3 className="text-xl text-black font-semibold justify-center ">{nombre}</h3>
+                        </div>
+                    ))}
                 </div>
             </div>
-        );
-
-
+        </div>
+    );
 }
