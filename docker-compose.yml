@@ -13,10 +13,9 @@ services:
   # Backend NestJS
   api-gateway:
     build:
-      context: ./backend # Le decimos que construya desde el monorepo
-      dockerfile: apps/api-gateway/Dockerfile # Usando su Dockerfile específico
+      context: ./backend
+      dockerfile: apps/api-gateway/Dockerfile
     restart: unless-stopped
-    # NO exponemos puertos al exterior. Caddy se encarga de eso.
     depends_on:
       - auth-service
       - users-service
@@ -28,7 +27,7 @@ services:
       dockerfile: apps/auth-service/Dockerfile
     restart: unless-stopped
     depends_on:
-      - users-service # Auth necesita a Users para funcionar
+      - users-service
       - postgres-db
 
   users-service:
@@ -49,7 +48,7 @@ services:
 
   # Bases de datos
   postgres-db:
-    image: postgres:15-alpine # Versión específica, no "latest"
+    image: postgres:15-alpine
     container_name: postgres
     restart: unless-stopped
     environment:
@@ -57,20 +56,20 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432" # Expone el puerto a tu máquina local para desarrollo
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   # Base de Datos NoSQL para Fichas Académicas
   mongo-db:
-    image: mongo:7 # Versión específica y estable
+    image: mongo:7
     container_name: mongo
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     ports:
-      - "27017:27017" # Expone el puerto a tu máquina local para desarrollo
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
 
