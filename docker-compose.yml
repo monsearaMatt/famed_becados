@@ -138,9 +138,11 @@ services:
     image: nats:2.10-alpine
     container_name: nats_broker
     restart: unless-stopped
+    ports:
+      - "4222:4222" # <-- AÑADE ESTA LÍNEA
     networks:
       - app-network
-
+      
 networks:
   app-network:
     driver: bridge

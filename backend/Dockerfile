@@ -1,11 +1,11 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 WORKDIR /usr/src/app
 RUN npm i -g pnpm
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm fetch --prod
+RUN pnpm install --prod
 
 # Builder que construye una aplicación específica
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
 COPY --from=base /usr/src/app/node_modules ./node_modules
 COPY . .
@@ -15,7 +15,7 @@ ARG APP_NAME
 RUN pnpm run build ${APP_NAME}
 
 # Etapa final
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /usr/src/app
 COPY --from=base /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
