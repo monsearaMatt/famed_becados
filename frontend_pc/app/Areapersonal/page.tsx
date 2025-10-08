@@ -12,9 +12,9 @@ export default function Tecnologia() {
     const router = useRouter();
     
     const [tecnologias, setTecnologias] = useState<TecnologiaItem[]>([
-        { id: 1, nombre: "2023", link: "/Especialidad" },
-        { id: 2, nombre: "2024" },
-        { id: 3, nombre: "2025" }
+        { id: 1, nombre: "Traqueotomía", link: "/Becado" },
+        { id: 2, nombre: "Rubricas" },
+        { id: 3, nombre: "Quirofano" }
     ]);
 
     const [mostrarModal, setMostrarModal] = useState(false);
@@ -55,13 +55,13 @@ export default function Tecnologia() {
         if (tecnologia.link) {
             router.push(tecnologia.link);
         }
-     
+        
     };
 
     return (
         <div className="bg-[#EEEEEE] min-h-screen flex flex-col items-center">
             
-          
+        
             <nav className="flex justify-end items-center w-full py-12 bg-[#3FD0B6] border-b-8 border-gray-300">
                 <button
                     className="bg-none border-none mr-12 cursor-pointer text-6xl w-20 h-20"
@@ -79,16 +79,18 @@ export default function Tecnologia() {
                 </button>
             </nav>
 
-           
+            
             <div
                 className="bg-white rounded-3xl shadow-lg shadow-gray-200 p-16 w-[calc(100%-4rem)] min-h-screen mt-0 mb-8 relative border-2 border-[#4b867b]"
             >
-                
+             
                 <div className="flex justify-between items-center mb-12 border-4 border-[#3fd0b6] rounded-lg p-4">
                     <h1 className="text-4xl font-semibold text-gray-800">
-                        Cortes
+                        Secciones
                     </h1>
-                    
+                    <div className="border border-gray-400 rounded-lg py-2 px-4 text-sm text-gray-600">
+                        Completado %
+                    </div>
                 </div>
                 
                
@@ -108,7 +110,7 @@ export default function Tecnologia() {
                         </div>
                     ))}
                     
-                    
+                   
                     <button 
                         onClick={abrirModal}
                         className="bg-white border-2 border-dashed border-gray-400 rounded-2xl p-8 hover:border-[#3fd0b6] hover:bg-gray-50 transition-all flex flex-col items-center justify-center min-h-[140px]"
@@ -124,19 +126,19 @@ export default function Tecnologia() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-                            Agregar Nuevo corte
+                            Agregar Nueva Sección
                         </h3>
                         
                         <div className="mb-6">
                             <label className="block text-gray-700 text-sm font-medium mb-2">
-                                Año de Corte
+                                Nombre de la Sección:
                             </label>
                             <input
                                 type="text"
                                 value={nuevaTecnologia}
                                 onChange={(e) => setNuevaTecnologia(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder="Ej: 2026, 2027..."
+                                placeholder="Ej: Ventilador, Monitor..."
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500"
                                 autoFocus
                             />
