@@ -19,6 +19,15 @@
         "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
       }
     },
+    "fichas-service": {
+      "type": "application",
+      "root": "apps/fichas-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/fichas-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/fichas-service/tsconfig.app.json"
+      }
+    },
     "users-service": {
       "type": "application",
       "root": "apps/users-service",
