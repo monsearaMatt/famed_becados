@@ -18,6 +18,6 @@ export class UsersController {
 
   @MessagePattern('users.findByRut')
   handleUserFindByRut(@Payload() rut: string) {
-    return this.usersService.findByEmail(rut);
+    return this.usersService.findbyRut(rut);
   }
 }
