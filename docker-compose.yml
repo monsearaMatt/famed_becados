@@ -1,10 +1,7 @@
 services:
   # ---------- FRONTEND (Next.js) ----------
   frontend-pc:
-    build:
-      context: ./frontend_pc
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000/api
+    build: ./frontend_pc
     container_name: frontend_pc
     restart: unless-stopped
     depends_on:
