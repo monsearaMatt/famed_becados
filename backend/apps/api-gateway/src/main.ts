@@ -8,6 +8,17 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  // Configuración de CORS
+  app.enableCors({
+    origin: [
+      'http://localhost:3001',  // Frontend en desarrollo/Docker
+      'http://localhost:3000',  // Por si accedes directo
+      'http://frontend-pc:3001', // Nombre del contenedor Docker
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization, Accept',
+  });
 
   app.setGlobalPrefix('api', {
     exclude: [{

@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Usuario {
     nombre: string;
@@ -10,14 +11,35 @@ interface Usuario {
 
 export default function Perfil() {
     const router = useRouter();
+    const { user, isLoading, isAuthenticated, logout } = useAuth();
     const [editando, setEditando] = useState(false);
     const [usuario, setUsuario] = useState<Usuario>({
-        nombre: "Juan Pérez",
-        email: "juan.perez@email.com",
+        nombre: user?.nombre || "Juan Pérez",
+        email: user?.email || "juan.perez@email.com",
         telefono: "+569 2567 8900"
     });
 
     const [usuarioEditado, setUsuarioEditado] = useState<Usuario>(usuario);
+
+    // Redirigir si no está autenticado
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push("/Login");
+        }
+    }, [isLoading, isAuthenticated, router]);
+
+    // Actualizar usuario cuando cargue
+    useEffect(() => {
+        if (user) {
+            const updatedUsuario = {
+                nombre: `${user.nombre} ${user.apellido}`,
+                email: user.email,
+                telefono: "+569 2567 8900"
+            };
+            setUsuario(updatedUsuario);
+            setUsuarioEditado(updatedUsuario);
+        }
+    }, [user]);
 
     const iniciarEdicion = () => {
         setUsuarioEditado(usuario);
@@ -44,9 +66,17 @@ export default function Perfil() {
 
     const handleLogout = () => {
         if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) {
-            router.push("/login");
+            logout();
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3FD0B6]"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
