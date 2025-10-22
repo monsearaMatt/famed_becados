@@ -17,7 +17,7 @@ export default function LoginForm() {
     try {
       console.log({ email, password });
       await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push('/Areapersonal'); // Cambiado a /Areapersonal
+      router.push('/Areapersonal');
     } catch (error) {
       console.error('Error en login:', error);
     } finally {

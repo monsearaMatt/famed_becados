@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import AgregarIntegranteButton from "./IntegratnteButton";
+import { useRouter } from "next/navigation";
 
 interface Integrante {
     id: number;
@@ -13,6 +13,7 @@ interface IntegrantesProps {
 }
 
 export default function Integrantes({ integrantesIniciales }: IntegrantesProps) {
+    const router = useRouter();
     const [integrantes, setIntegrantes] = useState<Integrante[]>(
         integrantesIniciales || [
             { 
@@ -92,96 +93,119 @@ export default function Integrantes({ integrantesIniciales }: IntegrantesProps) 
     };
 
     const handleClickNombre = (integrante: Integrante) => {
-       
         console.log("Clic en:", integrante.nombre);
-        
+    };
+
+    const handleProfileClick = () => {
+        router.push("/Logout");
     };
 
     return (
-        <div className="bg-[#EEEEEE] min-h-screen flex flex-col items-center">
+        <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
             
-        
-            <nav className="flex justify-end items-center w-full py-12 bg-[#3FD0B6] border-b-8 border-gray-300">
-                <button
-                    className="bg-none border-none mr-12 cursor-pointer text-6xl w-20 h-20"
-                >
-                    <span role="img" aria-label="notifications">
-                        🔔
-                    </span>
-                </button>
-                <button
-                    className="bg-none border-none cursor-pointer text-6xl w-20 h-20"
-                >
-                    <span role="img" aria-label="profile">
-                        👤
-                    </span>
-                </button>
+            {/* Navegación  */}
+            <nav className="flex justify-end items-center py-4 px-6 bg-white/10 backdrop-blur-md border-b-2 border-white/20">
+                <div className="flex items-center space-x-3">
+                    <button className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-2 text-white text-lg backdrop-blur-sm">
+                        <span role="img" aria-label="notifications">
+                            🔔
+                        </span>
+                    </button>
+                    <button 
+                        onClick={handleProfileClick}
+                        className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-2 text-white text-lg backdrop-blur-sm"
+                    >
+                        <span role="img" aria-label="profile">
+                            👤
+                        </span>
+                    </button>
+                </div>
             </nav>
 
-         
-            <div
-                className="bg-white rounded-3xl shadow-lg shadow-gray-200 p-16 w-[calc(100%-4rem)] min-h-screen mt-0 mb-8 relative border-2 border-[#4b867b]"
-            >
-              
-                <div className="flex justify-between items-center mb-12 border-4 border-[#3fd0b6] rounded-lg p-4">
-                 <h2 className="text-4xl font-semibold text-gray-800">
-                  Integrantes
-                 </h2>
-                 <div className="border border-gray-400 rounded-lg py-2 px-4 text-sm text-gray-600">
-                   Total: {integrantes.length}
-                 </div>
-                </div>
-                
-              
-                <div className="flex flex-col space-y-4">
+            {/* Contenedor  */}
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="bg-white shadow-2xl w-full max-w-6xl border-2 border-white/30 flex rounded-3xl overflow-hidden">
                     
-                    <div className="flex items-center w-full py-4 border-b-2 border-gray-300 font-semibold text-gray-700">
-                        <div className="w-1/2">Nombre</div>
-                        <div className="w-1/2">Email</div>
-                        <div className="w-1/4 text-center"></div>
-                    </div>
-                    
-                   
-                    {integrantes.map((integrante) => (
-                        <div key={integrante.id} className="flex items-center w-full py-4 border-b border-gray-200">
-                            <div className="w-1/2">
-                                <button 
-                                    onClick={() => handleClickNombre(integrante)}
-                                    className="text-gray-800 font-medium hover:text-[#3FD0B6] hover:underline transition-colors text-left"
-                                >
-                                    {integrante.nombre}
-                                </button>
-                            </div>
-                            <div className="w-1/2">
-                                <span className="text-gray-600">
-                                    {integrante.email}
-                                </span>
-                            </div>
-                            <div className="w-1/4 flex justify-center">
-                                <button 
-                                    onClick={() => eliminarIntegrante(integrante.id)}
-                                    className="bg-white border border-gray-400 rounded-md py-1 px-3 text-red-600 text-sm hover:bg-red-50 transition-colors"
-                                >
-                                    Eliminar
-                                </button>
+                    {/* Contenido principal */}
+                    <div className="flex-1 p-6 flex flex-col">
+                        {/* Header  */}
+                        <div className="text-center mb-6">
+                            <h1 className="text-2xl font-bold text-gray-800 mb-1">Gestión de Integrantes</h1>
+                            <p className="text-gray-600 text-sm">Administra los miembros</p>
+                        </div>
+
+                        {/* Información de estadísticas */}
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] rounded-2xl p-4 text-white text-center backdrop-blur-sm">
+                                <div className="text-2xl font-bold">{integrantes.length}</div>
+                                <div className="text-sm opacity-90">Integrantes Totales</div>
                             </div>
                         </div>
-                    ))}
-                    
-                  
-                    <AgregarIntegranteButton onAgregar={abrirModal} />
+
+                        {/* Lista de integrantes*/}
+                        <div className="space-y-3 flex-1">
+                            {/* Encabezado de la tabla */}
+                            <div className="flex items-center w-full py-3 px-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 font-semibold text-gray-700 text-sm">
+                                <div className="w-2/5">Nombre</div>
+                                <div className="w-2/5">Email</div>
+                                <div className="w-1/5 text-center">Acciones</div>
+                            </div>
+                            
+                            {/* Integrantes */}
+                            {integrantes.map((integrante) => (
+                                <div 
+                                    key={integrante.id} 
+                                    className="flex items-center w-full py-3 px-4 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
+                                >
+                                    <div className="w-2/5">
+                                        <button 
+                                            onClick={() => handleClickNombre(integrante)}
+                                            className="text-gray-800 font-medium hover:text-[#3FD0B6] hover:underline transition-colors text-left flex items-center space-x-2"
+                                        >
+                                            <div className="w-6 h-6 bg-[#3FD0B6]/10 rounded-full flex items-center justify-center">
+                                                <span className="text-[#3FD0B6] text-xs">👤</span>
+                                            </div>
+                                            <span>{integrante.nombre}</span>
+                                        </button>
+                                    </div>
+                                    <div className="w-2/5">
+                                        <span className="text-gray-600 text-sm">
+                                            {integrante.email}
+                                        </span>
+                                    </div>
+                                    <div className="w-1/5 flex justify-center">
+                                        <button 
+                                            onClick={() => eliminarIntegrante(integrante.id)}
+                                            className="bg-white border border-red-300 rounded-lg px-3 py-1 text-red-600 text-xs hover:bg-red-50 transition-all duration-300 font-medium"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {/* Botón Agregar  */}
+                            <button 
+                                onClick={abrirModal}
+                                className="w-full bg-gradient-to-br from-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 hover:border-[#3FD0B6] hover:bg-gray-50 transition-all duration-300 flex flex-col items-center justify-center"
+                            >
+                                <div className="text-2xl text-gray-400 mb-1">+</div>
+                                <div className="text-gray-500 font-medium text-sm">Agregar Nuevo Integrante</div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-           
+          
             {mostrarModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
-                        <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 border-2 border-white/30 shadow-2xl">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">
                             Agregar Nuevo Integrante
                         </h3>
                         
-                        <div className="space-y-4 mb-6">
+                        <div className="space-y-4 mb-4">
                             <div>
                                 <label className="block text-gray-700 text-sm font-medium mb-2">
                                     Nombre completo:
@@ -192,7 +216,7 @@ export default function Integrantes({ integrantesIniciales }: IntegrantesProps) 
                                     onChange={(e) => handleInputChange('nombre', e.target.value)}
                                     onKeyPress={handleKeyPress}
                                     placeholder="Ej: Ana Martínez"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500 transition-all duration-300"
                                     autoFocus
                                 />
                             </div>
@@ -207,21 +231,21 @@ export default function Integrantes({ integrantesIniciales }: IntegrantesProps) 
                                     onChange={(e) => handleInputChange('email', e.target.value)}
                                     onKeyPress={handleKeyPress}
                                     placeholder="Ej: ana.martinez@email.com"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500 transition-all duration-300"
                                 />
                             </div>
                         </div>
                         
-                        <div className="flex justify-end space-x-3">
+                        <div className="flex justify-end space-x-2">
                             <button
                                 onClick={cerrarModal}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm font-medium"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={agregarIntegrante}
-                                className="px-6 py-2 bg-[#3FD0B6] text-white rounded-lg hover:bg-[#35b8a0] transition-colors"
+                                className="px-4 py-2 bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-medium"
                             >
                                 Agregar
                             </button>
