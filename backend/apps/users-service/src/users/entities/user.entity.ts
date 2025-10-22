@@ -10,7 +10,6 @@ export type UserRole = 'becado' | 'tutor' | 'jefe_programa';
 
 @Entity({ name: 'users' })
 export class User {
-
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -19,6 +18,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 100 })
   nombre: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  apellido: string;
 
   @Column({ type: 'varchar', length: 255 })
   passwordHash: string;

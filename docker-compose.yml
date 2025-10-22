@@ -12,7 +12,6 @@ services:
 
   # ---------- BACKEND (NestJS) ----------
 
-  # ---------- API GATEWAY (Nest/HTTP) ----------
   api-gateway:
     build:
       context: ./backend
@@ -114,7 +113,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Base de Datos NoSQL para Fichas Académicas
   mongo-db:
     image: mongo:7
     container_name: mongo_db

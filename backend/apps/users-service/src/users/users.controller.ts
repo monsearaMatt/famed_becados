@@ -16,8 +16,8 @@ export class UsersController {
     return this.usersService.findByEmail(email);
   }
 
-    @MessagePattern('users.findByRut')
+  @MessagePattern('users.findByRut')
   handleUserFindByRut(@Payload() rut: string) {
-    return this.usersService.findByEmail(rut);
+    return this.usersService.findbyRut(rut);
   }
 }
