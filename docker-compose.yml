@@ -1,14 +1,17 @@
 services:
-  # ---------- FRONTEND (React) ----------
-  frontend:
-    build: ./frontend
+  # ---------- FRONTEND (Next.js) ----------
+  frontend-pc:
+    build: ./frontend_pc
+    container_name: frontend_pc
     restart: unless-stopped
     depends_on:
       - api-gateway
     ports:
-      - "80:80"
+      - "3001:3001"
     networks:
       - app-network
+    environment:
+      NODE_ENV: production
 
   # ---------- BACKEND (NestJS) ----------
 
@@ -72,24 +75,24 @@ services:
       nats:
         condition: service_started
 
-  fichas-service:
-    build:
-      context: ./backend
-      args:
-        APP_NAME: fichas-service
-    container_name: fichas_service
-    restart: unless-stopped
-    command: node dist/apps/fichas-service/main
-    networks:
-      - app-network
-    environment:
-      NATS_URL: nats://nats:4222
-      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo-db:27017/${MONGO_DB_NAME}?authSource=admin
-    depends_on:
-      mongo-db:
-        condition: service_healthy
-      nats:
-        condition: service_started
+  # fichas-service:
+  #   build:
+  #     context: ./backend
+  #     args:
+  #       APP_NAME: fichas-service
+  #   container_name: fichas_service
+  #   restart: unless-stopped
+  #   command: node dist/apps/fichas-service/main
+  #   networks:
+  #     - app-network
+  #   environment:
+  #     NATS_URL: nats://nats:4222
+  #     MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo-db:27017/${MONGO_DB_NAME}?authSource=admin
+  #   depends_on:
+  #     mongo-db:
+  #       condition: service_healthy
+  #     nats:
+  #       condition: service_started
 
 
   # ---------- INFRA ----------
