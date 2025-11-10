@@ -22,11 +22,11 @@ export default function Perfil() {
     const [usuarioEditado, setUsuarioEditado] = useState<Usuario>(usuario);
 
     // Redirigir si no está autenticado
-    useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.push("/Login");
-        }
-    }, [isLoading, isAuthenticated, router]);
+    //useEffect(() => {
+    //    if (!isLoading && !isAuthenticated) {
+    //        router.push("/Login");
+    //}
+    //}, [isLoading, isAuthenticated, router]);
 
     // Actualizar usuario cuando cargue
     useEffect(() => {

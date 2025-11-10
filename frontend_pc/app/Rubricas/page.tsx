@@ -75,6 +75,7 @@ export default function Rubrica() {
                     puntaje: 7,
                     descripcion: "Domina los conceptos teóricos y puede generar nuevo conocimiento"
                 }
+            ]
         },
         {
             id: 2,
