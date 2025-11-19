@@ -2,58 +2,58 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface CorteItem {
+interface EspecialidadItem {
     id: number;
     nombre: string;
     link?: string;
 }
 
-export default function Cortes() {
+export default function Especialidad() {
     const router = useRouter();
     
-    const [cortes, setCortes] = useState<CorteItem[]>([
-        { id: 1, nombre: "2023", link: "/Especialidad" },
-        { id: 2, nombre: "2024" },
-        { id: 3, nombre: "2025" }
+    const [especialidades, setEspecialidades] = useState<EspecialidadItem[]>([
+        { id: 1, nombre: "Doctorado", link: "/Lista_Becados" },
+        { id: 2, nombre: "Dermatología" },
+        { id: 3, nombre: "Internado Alessandri" }
     ]);
 
     const [mostrarModal, setMostrarModal] = useState(false);
-    const [nuevoCorte, setNuevoCorte] = useState("");
+    const [nuevaEspecialidad, setNuevaEspecialidad] = useState("");
 
     const abrirModal = () => {
         setMostrarModal(true);
-        setNuevoCorte("");
+        setNuevaEspecialidad("");
     };
 
     const cerrarModal = () => {
         setMostrarModal(false);
-        setNuevoCorte("");
+        setNuevaEspecialidad("");
     };
 
-    const agregarCorte = () => {
-        if (nuevoCorte.trim() === "") {
-            alert("Por favor ingresa un año para el corte");
+    const agregarEspecialidad = () => {
+        if (nuevaEspecialidad.trim() === "") {
+            alert("Por favor ingresa un nombre para la especialidad");
             return;
         }
 
-        const nuevoCorteObj = {
+        const nuevaEspecialidadObj = {
             id: Date.now(),
-            nombre: nuevoCorte.trim()
+            nombre: nuevaEspecialidad.trim()
         };
 
-        setCortes([...cortes, nuevoCorteObj]);
+        setEspecialidades([...especialidades, nuevaEspecialidadObj]);
         cerrarModal();
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            agregarCorte();
+            agregarEspecialidad();
         }
     };
 
-    const handleClickCorte = (corte: CorteItem) => {
-        if (corte.link) {
-            router.push(corte.link);
+    const handleClickEspecialidad = (especialidad: EspecialidadItem) => {
+        if (especialidad.link) {
+            router.push(especialidad.link);
         }
     };
 
@@ -64,7 +64,7 @@ export default function Cortes() {
     return (
         <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
             
-          
+            {/* Navegación */}
             <nav className="flex justify-end items-center py-4 px-6 bg-white/10 backdrop-blur-md border-b-2 border-white/20">
                 <div className="flex items-center space-x-3">
                     <button className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-2 text-white text-lg backdrop-blur-sm">
@@ -83,7 +83,7 @@ export default function Cortes() {
                 </div>
             </nav>
 
-            
+            {/* Contenedor principal */}
             <div className="flex-1 flex items-center justify-center p-4">
                 <div className="bg-white shadow-2xl w-full max-w-6xl border-2 border-white/30 flex rounded-3xl overflow-hidden">
                     
@@ -91,30 +91,30 @@ export default function Cortes() {
                     <div className="flex-1 p-6 flex flex-col">
                         {/* Header */}
                         <div className="text-center mb-6">
-                            <h1 className="text-2xl font-bold text-gray-800 mb-1">Cortes</h1>
-                            <p className="text-gray-600 text-sm">Gestiona los cortes por año</p>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-1">Especialidades</h1>
+                            <p className="text-gray-600 text-sm">Gestiona las especialidades médicas</p>
                         </div>
 
-                    
+                       
 
-                        {/* Grid de 3 columnas  */}
+                        {/* Grid de 3 columnas */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
-                            
-                            {cortes.map((corte) => (
+                           
+                            {especialidades.map((especialidad) => (
                                 <div
-                                    key={corte.id}
-                                    onClick={() => handleClickCorte(corte)}
+                                    key={especialidad.id}
+                                    onClick={() => handleClickEspecialidad(especialidad)}
                                     className={`bg-gradient-to-br from-white to-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer min-h-[120px] flex flex-col items-center justify-center ${
-                                        corte.link ? "hover:border-[#3FD0B6] hover:bg-blue-50/30" : "hover:border-gray-300"
+                                        especialidad.link ? "hover:border-[#3FD0B6] hover:bg-blue-50/30" : "hover:border-gray-300"
                                     }`}
                                 >
                                     <div className="w-12 h-12 bg-[#3FD0B6]/10 rounded-full flex items-center justify-center mb-3">
-                                        <span className="text-[#3FD0B6] text-lg">📅</span>
+                                        <span className="text-[#3FD0B6] text-lg">🎓</span>
                                     </div>
                                     <h3 className="text-base font-semibold text-gray-800 text-center">
-                                        {corte.nombre}
+                                        {especialidad.nombre}
                                     </h3>
-                                    {corte.link && (
+                                    {especialidad.link && (
                                         <div className="mt-2 text-xs text-[#3FD0B6] font-medium">
                                             Click para acceder →
                                         </div>
@@ -122,13 +122,13 @@ export default function Cortes() {
                                 </div>
                             ))}
                             
-                            {/* Botón para agregar nuevo corte con diseño mejorado */}
+                            {/* Botón para agregar nueva especialidad  */}
                             <button 
                                 onClick={abrirModal}
                                 className="bg-gradient-to-br from-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 hover:border-[#3FD0B6] hover:bg-gray-50 transition-all duration-300 flex flex-col items-center justify-center min-h-[120px]"
                             >
                                 <div className="text-2xl text-gray-400 mb-2">+</div>
-                                <div className="text-gray-500 font-medium text-sm text-center">Agregar Nuevo Corte</div>
+                                <div className="text-gray-500 font-medium text-sm text-center">Agregar Nueva Especialidad</div>
                             </button>
                         </div>
                     </div>
@@ -140,19 +140,19 @@ export default function Cortes() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                     <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 border-2 border-white/30 shadow-2xl">
                         <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                            Agregar Nuevo Corte
+                            Agregar Nueva Especialidad
                         </h3>
                         
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-medium mb-2">
-                                Año de Corte:
+                                Nombre de la especialidad:
                             </label>
                             <input
                                 type="text"
-                                value={nuevoCorte}
-                                onChange={(e) => setNuevoCorte(e.target.value)}
+                                value={nuevaEspecialidad}
+                                onChange={(e) => setNuevaEspecialidad(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder="Ej: 2026, 2027..."
+                                placeholder="Ej: Cardiología, Pediatría..."
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500 transition-all duration-300"
                                 autoFocus
                             />
@@ -166,7 +166,7 @@ export default function Cortes() {
                                 Cancelar
                             </button>
                             <button
-                                onClick={agregarCorte}
+                                onClick={agregarEspecialidad}
                                 className="px-4 py-2 bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-medium"
                             >
                                 Agregar

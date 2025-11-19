@@ -326,16 +326,7 @@ export default function Rubrica() {
                             </div>
                         </div>
 
-                        {/* Botón para cargar rúbrica desde archivo */}
-                        <div className="flex justify-center mb-6">
-                            <button 
-                                onClick={abrirModalArchivo}
-                                className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl px-6 py-3 hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2"
-                            >
-                                <span>📁</span>
-                                <span>Cargar Rúbrica desde Archivo</span>
-                            </button>
-                        </div>
+                    
 
                         {/* Formulario de rúbrica */}
                         <div className="space-y-6 flex-1 overflow-y-auto max-h-96">
