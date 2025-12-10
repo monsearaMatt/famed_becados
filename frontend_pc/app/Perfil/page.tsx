@@ -2,11 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import Navbar from "@/components/Navbar";
+import { userService } from "@/lib/services/userService";
+import { profileService } from "@/lib/services/profileService";
 
 interface Usuario {
     nombre: string;
     email: string;
     telefono: string;
+    rut: string;
+    rol: string;
 }
 
 export default function Perfil() {
@@ -14,32 +19,74 @@ export default function Perfil() {
     const { user, isLoading, isAuthenticated, logout } = useAuth();
     const [editando, setEditando] = useState(false);
     const [usuario, setUsuario] = useState<Usuario>({
-        nombre: user?.nombre || "Juan Pérez",
-        email: user?.email || "juan.perez@email.com",
-        telefono: "+569 2567 8900"
+        nombre: "",
+        email: "",
+        telefono: "",
+        rut: "",
+        rol: ""
     });
 
     const [usuarioEditado, setUsuarioEditado] = useState<Usuario>(usuario);
 
-    // Redirigir si no está autenticado
-    //useEffect(() => {
-    //    if (!isLoading && !isAuthenticated) {
-    //        router.push("/Login");
-    //}
-    //}, [isLoading, isAuthenticated, router]);
-
     // Actualizar usuario cuando cargue
     useEffect(() => {
-        if (user) {
-            const updatedUsuario = {
-                nombre: `${user.nombre} ${user.apellido}`,
-                email: user.email,
-                telefono: "+569 2567 8900"
-            };
-            setUsuario(updatedUsuario);
-            setUsuarioEditado(updatedUsuario);
+        const fetchMyProfile = async () => {
+            if (user?.rut) {
+                console.log("Fetching profile for user:", user);
+                try {
+                    // Try to fetch full profile from becado-service (includes email, phone)
+                    console.log("Calling profileService.getMyProfile with role:", user.rol);
+                    const fullProfile = await profileService.getMyProfile(user.rol);
+                    console.log("Full profile fetched successfully:", fullProfile);
+                    
+                    const profileData = {
+                        nombre: fullProfile.fullName,
+                        email: fullProfile.email || user.email || "",
+                        telefono: fullProfile.phone || "+569 2567 8900",
+                        rut: fullProfile.rut,
+                        rol: user.rol // Keep role from auth context as profile might not have it explicitly
+                    };
+                    
+                    setUsuario(profileData);
+                    setUsuarioEditado(profileData);
+                } catch (error) {
+                    console.error("Error fetching profile from service, falling back to auth:", error);
+                    
+                    // Fallback to userService (Auth service)
+                    try {
+                        console.log("Attempting fallback to userService...");
+                        const authUser = await userService.getByRut(user.rut);
+                        console.log("Fallback auth user fetched:", authUser);
+                        const fallbackData = {
+                            nombre: authUser.fullName,
+                            email: user.email || "",
+                            telefono: "+569 2567 8900",
+                            rut: authUser.rut,
+                            rol: authUser.role
+                        };
+                        setUsuario(fallbackData);
+                        setUsuarioEditado(fallbackData);
+                    } catch (authError) {
+                        console.error("Error fetching from auth service:", authError);
+                        // Final fallback to local storage data
+                        const localData = {
+                            nombre: `${user.nombre} ${user.apellido}`,
+                            email: user.email,
+                            telefono: "+569 2567 8900",
+                            rut: user.rut,
+                            rol: user.rol
+                        };
+                        setUsuario(localData);
+                        setUsuarioEditado(localData);
+                    }
+                }
+            }
+        };
+
+        if (!isLoading && user) {
+            fetchMyProfile();
         }
-    }, [user]);
+    }, [user, isLoading]);
 
     const iniciarEdicion = () => {
         setUsuarioEditado(usuario);
@@ -51,10 +98,27 @@ export default function Perfil() {
         setUsuarioEditado(usuario);
     };
 
-    const guardarCambios = () => {
-        setUsuario(usuarioEditado);
-        setEditando(false);
-        alert("Cambios guardados exitosamente");
+    const guardarCambios = async () => {
+        try {
+            // Map UI fields to API fields
+            // Note: We map 'nombre' to 'fullName' and 'telefono' to 'phone'
+            const updateData = {
+                fullName: usuarioEditado.nombre,
+                email: usuarioEditado.email,
+                phone: usuarioEditado.telefono,
+            };
+            
+            console.log("Guardando cambios...", updateData);
+            await profileService.updateProfile(usuario.rol, updateData);
+            console.log("Cambios guardados exitosamente en el backend");
+            
+            setUsuario(usuarioEditado);
+            setEditando(false);
+            alert("Cambios guardados exitosamente");
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            alert("Error al guardar los cambios: " + (error instanceof Error ? error.message : "Error desconocido"));
+        }
     };
 
     const handleInputChange = (field: keyof Usuario, value: string) => {
@@ -81,21 +145,7 @@ export default function Perfil() {
     return (
         <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
             
-            
-            <nav className="flex justify-end items-center py-6 px-8 bg-white/10 backdrop-blur-md border-b-2 border-white/20">
-                <div className="flex items-center space-x-4">
-                    <button className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-3 text-white text-xl backdrop-blur-sm">
-                        <span role="img" aria-label="notifications">
-                            🔔
-                        </span>
-                    </button>
-                    <button className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-3 text-white text-xl backdrop-blur-sm">
-                        <span role="img" aria-label="profile">
-                            👤
-                        </span>
-                    </button>
-                </div>
-            </nav>
+            <Navbar title="Mi Perfil" subtitle="Cuenta" />
 
             {/* Contenedor principal */}
             <div className="flex-1 flex items-center justify-center p-8">
@@ -152,43 +202,58 @@ export default function Perfil() {
                                         )}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-gray-700 text-sm font-medium mb-3">
-                                            Correo Electrónico
-                                        </label>
-                                        {editando ? (
-                                            <input
-                                                type="email"
-                                                value={usuarioEditado.email}
-                                                onChange={(e) => handleInputChange('email', e.target.value)}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
-                                                placeholder="Ingresa tu correo electrónico"
-                                            />
-                                        ) : (
-                                            <div className="w-full px-4 py-3 bg-gray-50 rounded-xl text-gray-800 border border-transparent">
-                                                {usuario.email}
+                                    {/* Solo mostrar email y teléfono si NO es admin */}
+                                    {usuario.rol !== 'admin' && usuario.rol !== 'admin_readonly' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-gray-700 text-sm font-medium mb-3">
+                                                    Correo Electrónico
+                                                </label>
+                                                {editando ? (
+                                                    <input
+                                                        type="email"
+                                                        value={usuarioEditado.email}
+                                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
+                                                        placeholder="Ingresa tu correo electrónico"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full px-4 py-3 bg-gray-50 rounded-xl text-gray-800 border border-transparent">
+                                                        {usuario.email}
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
 
-                                    <div>
-                                        <label className="block text-gray-700 text-sm font-medium mb-3">
-                                            Teléfono
-                                        </label>
-                                        {editando ? (
-                                            <input
-                                                type="tel"
-                                                value={usuarioEditado.telefono}
-                                                onChange={(e) => handleInputChange('telefono', e.target.value)}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
-                                                placeholder="Ingresa tu número de teléfono"
-                                            />
-                                        ) : (
-                                            <div className="w-full px-4 py-3 bg-gray-50 rounded-xl text-gray-800 border border-transparent">
-                                                {usuario.telefono}
+                                            <div>
+                                                <label className="block text-gray-700 text-sm font-medium mb-3">
+                                                    Teléfono
+                                                </label>
+                                                {editando ? (
+                                                    <input
+                                                        type="tel"
+                                                        value={usuarioEditado.telefono}
+                                                        onChange={(e) => handleInputChange('telefono', e.target.value)}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
+                                                        placeholder="Ingresa tu número de teléfono"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full px-4 py-3 bg-gray-50 rounded-xl text-gray-800 border border-transparent">
+                                                        {usuario.telefono}
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
+                                        </>
+                                    )}
+
+                                    {/* Nota para admin */}
+                                    {(usuario.rol === 'admin' || usuario.rol === 'admin_readonly') && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                            <p className="text-blue-700 text-sm">
+                                                💡 Como administrador, solo puedes modificar tu nombre. 
+                                                Para cambiar la contraseña, contacta a otro administrador.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

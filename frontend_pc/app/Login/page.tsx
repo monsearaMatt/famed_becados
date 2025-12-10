@@ -2,14 +2,62 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/lib/auth';
 
+// Función para formatear el RUT mientras se escribe
+const formatRut = (value: string): string => {
+  // Eliminar todo excepto números y K/k
+  let cleaned = value.replace(/[^0-9kK]/g, '').toUpperCase();
+  
+  if (cleaned.length === 0) return '';
+  
+  // Separar el dígito verificador
+  let dv = '';
+  let body = cleaned;
+  
+  if (cleaned.length > 1) {
+    dv = cleaned.slice(-1);
+    body = cleaned.slice(0, -1);
+  }
+  
+  // Formatear el cuerpo con puntos
+  let formatted = '';
+  let count = 0;
+  
+  for (let i = body.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) {
+      formatted = '.' + formatted;
+    }
+    formatted = body[i] + formatted;
+    count++;
+  }
+  
+  // Agregar el guión y dígito verificador si existe
+  if (dv) {
+    formatted = formatted + '-' + dv;
+  }
+  
+  return formatted;
+};
+
+// Función para limpiar el RUT (sin formato) para enviar al servidor
+const cleanRut = (value: string): string => {
+  return value.replace(/\./g, '').replace(/-/g, '').toUpperCase();
+};
+
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [rut, setRut] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
+
+  const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatRut(e.target.value);
+    setRut(formatted);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,13 +66,43 @@ export default function LoginForm() {
     
 
     try {
-      const data = await authService.login(email, password);
+      // Usar login del contexto para actualizar el estado global
+      // Enviar el RUT limpio (sin puntos ni guión)
+      await login(cleanRut(rut), password);
       
-      // Guardar token y usuario en localStorage
-      authService.saveAuth(data);
+      // Obtener el usuario después del login
+      const user = authService.getUser();
+      const userRole = user?.rol;
+
+      if (!userRole) {
+        throw new Error('No se pudo determinar el rol del usuario');
+      }
+
+      // Verificar permisos de acceso a la plataforma web
+      const restrictedRoles = ['becado', 'doctor'];
+      if (restrictedRoles.includes(userRole)) {
+        authService.clearAuth();
+        setError('Acceso no autorizado. Por favor utilice la aplicación móvil.');
+        return;
+      }
       
-      // Redirigir al área personal
-      router.push('/Areapersonal');
+      // Redirigir según el rol del usuario
+      switch (userRole) {
+        case 'jefe_especialidad':
+          router.push('/jefe/areapersonal');
+          break;
+        case 'admin':
+          router.push('/admin/dashboard');
+          break;
+        case 'admin_readonly':
+          router.push('/admin/visual');
+          break;
+        default:
+          // Si es un rol desconocido pero no restringido, redirigir a una página por defecto o mostrar error
+          console.warn('Rol desconocido:', userRole);
+          setError('Rol de usuario no reconocido en el sistema web.');
+          authService.clearAuth();
+      }
     } catch (error) {
       console.error('Error en login:', error);
       setError(error instanceof Error ? error.message : 'Error al iniciar sesión');
@@ -68,19 +146,20 @@ export default function LoginForm() {
               <div className="rounded-md shadow-sm -space-y-px">
 
                 <div className="mb-4">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Correo electrónico
+                  <label htmlFor="rut" className="block text-sm font-medium text-gray-700 mb-1">
+                    RUT
                   </label>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
+                    id="rut"
+                    name="rut"
+                    type="text"
+                    autoComplete="username"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={rut}
+                    onChange={handleRutChange}
+                    maxLength={12}
                     className="relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-[#3FD0B6] text-sm"
-                    placeholder="correo@ejemplo.com"
+                    placeholder="12.345.678-9"
                   />
                 </div>
 

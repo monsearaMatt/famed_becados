@@ -1,0 +1,334 @@
+"use client";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
+import { profileService, ProfileUser } from "@/lib/services/profileService";
+
+export default function Integrantes() {
+    const router = useRouter();
+    const [integrantes, setIntegrantes] = useState<ProfileUser[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
+    // Menu state
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Delete confirmation state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<ProfileUser | null>(null);
+    const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const [exportando, setExportando] = useState(false);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const data = await profileService.getAllUsers();
+                setIntegrantes(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Error al cargar usuarios');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setActiveMenuId(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const toggleMenu = (userId: string) => {
+        if (activeMenuId === userId) {
+            setActiveMenuId(null);
+        } else {
+            setActiveMenuId(userId);
+        }
+    };
+
+    const handleViewProfile = (user: ProfileUser) => {
+        setActiveMenuId(null);
+        const cleanRut = user.rut.replace(/\./g, '').replace(/-/g, '');
+        router.push(`/Perfil/${cleanRut}`);
+    };
+
+    const handleEditProfile = (user: ProfileUser) => {
+        setActiveMenuId(null);
+        router.push(`/admin/users/${user.userId}/edit?role=${user.role}`);
+    };
+
+    const handleDeleteClick = (user: ProfileUser) => {
+        setActiveMenuId(null);
+        setUserToDelete(user);
+        setDeleteConfirmationText("");
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!userToDelete) return;
+        if (deleteConfirmationText !== "ELIMINAR") return;
+
+        setIsDeleting(true);
+        try {
+            // TODO: Implement delete user in profileService and backend
+            // await profileService.deleteUser(userToDelete.userId);
+            alert("Funcionalidad de eliminar en desarrollo (Backend pendiente).");
+            
+            // Mock removal from list for now
+            // setIntegrantes(prev => prev.filter(u => u.id !== userToDelete.id));
+            
+            setShowDeleteConfirm(false);
+            setUserToDelete(null);
+        } catch (err) {
+            alert("Error al eliminar usuario");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const exportarArchivoComprimido = async () => {
+        setExportando(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            const datosExportar = {
+                fechaExportacion: new Date().toISOString(),
+                totalIntegrantes: integrantes.length,
+                integrantes: integrantes,
+                estadisticas: {
+                    porRol: {
+                        admin: integrantes.filter(i => i.role === 'admin').length,
+                        jefe_especialidad: integrantes.filter(i => i.role === 'jefe_especialidad').length,
+                        doctor: integrantes.filter(i => i.role === 'doctor').length,
+                        becado: integrantes.filter(i => i.role === 'becado').length
+                    }
+                }
+            };
+            const datosJSON = JSON.stringify(datosExportar, null, 2);
+            const blob = new Blob([datosJSON], { type: 'application/zip' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `backup_integrantes_${new Date().toISOString().split('T')[0]}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            alert(`Archivo comprimido exportado exitosamente!\nTotal de integrantes: ${integrantes.length}`);
+        } catch (error) {
+            console.error('Error al exportar:', error);
+            alert('Error al exportar el archivo comprimido.');
+        } finally {
+            setExportando(false);
+        }
+    };
+
+    const handleAgregarUsuario = () => {
+        router.push('/admin/users/new');
+    };
+
+    const getColorRol = (rol: string) => {
+        switch(rol.toLowerCase()) {
+            case 'admin': return 'bg-purple-100 text-purple-800 border-purple-200';
+            case 'admin_readonly': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+            case 'jefe_especialidad': return 'bg-blue-100 text-blue-800 border-blue-200';
+            case 'doctor': return 'bg-green-100 text-green-800 border-green-200';
+            case 'becado': return 'bg-orange-100 text-orange-800 border-orange-200';
+            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
+            <Navbar title="Gestión de Integrantes" subtitle="Administración" />
+
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="bg-white shadow-2xl w-full max-w-7xl border-2 border-white/30 flex rounded-3xl overflow-hidden">
+                    <div className="flex-1 p-6 flex flex-col">
+                        <div className="text-center mb-6">
+                            <h1 className="text-2xl font-bold text-gray-800 mb-1">Gestión de Integrantes</h1>
+                            <p className="text-gray-600 text-sm">Administra los miembros del equipo</p>
+                        </div>
+
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] rounded-2xl p-4 text-white text-center backdrop-blur-sm">
+                                <div className="text-2xl font-bold">{integrantes.length}</div>
+                                <div className="text-sm opacity-90">Integrantes Totales</div>
+                            </div>
+                            
+                            <div className="flex space-x-2">
+                                <button 
+                                    onClick={exportarArchivoComprimido}
+                                    disabled={exportando || loading}
+                                    className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl px-4 py-3 hover:shadow-lg transition-all duration-300 font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {exportando ? (
+                                        <>
+                                            <span className="animate-spin">⏳</span>
+                                            <span>Exportando...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>📦</span>
+                                            <span>Exportar Backup</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {loading && <div className="text-center py-10">Cargando usuarios...</div>}
+                        {error && <div className="text-center py-10 text-red-500">{error}</div>}
+
+                        {!loading && !error && (
+                            <div className="space-y-3 flex-1 pb-20"> {/* Added padding bottom for menu space */}
+                                <div className="flex items-center w-full py-3 px-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 font-semibold text-gray-700 text-sm">
+                                    <div className="w-1/4">Nombre</div>
+                                    <div className="w-1/4">Email</div>
+                                    <div className="w-1/4">Rol</div>
+                                    <div className="w-1/4 text-center">Acciones</div>
+                                </div>
+                                
+                                {integrantes.map((integrante) => (
+                                    <div 
+                                        key={integrante.id} 
+                                        className="relative flex items-center w-full py-3 px-4 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
+                                    >
+                                        <div className="w-1/4 flex items-center space-x-2">
+                                            <div className="w-8 h-8 bg-[#3FD0B6]/10 rounded-full flex items-center justify-center text-[#3FD0B6]">
+                                                👤
+                                            </div>
+                                            <span className="font-medium text-gray-800">{integrante.fullName}</span>
+                                        </div>
+                                        <div className="w-1/4">
+                                            <span className="text-gray-600 text-sm">
+                                                {integrante.email || 'Sin email'}
+                                            </span>
+                                        </div>
+                                        <div className="w-1/4">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getColorRol(integrante.role)}`}>
+                                                {integrante.role}
+                                            </span>
+                                        </div>
+                                        <div className="w-1/4 flex justify-center relative">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleMenu(integrante.id);
+                                                }}
+                                                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 font-bold text-xl"
+                                            >
+                                                ⋮
+                                            </button>
+
+                                            {/* Dropdown Menu */}
+                                            {activeMenuId === integrante.id && (
+                                                <div 
+                                                    ref={menuRef}
+                                                    className="absolute right-10 top-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in duration-200"
+                                                >
+                                                    <div className="py-1">
+                                                        <button
+                                                            onClick={() => handleViewProfile(integrante)}
+                                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#3FD0B6] flex items-center space-x-2"
+                                                        >
+                                                            <span>👁️</span>
+                                                            <span>Ver Perfil</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleEditProfile(integrante)}
+                                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 flex items-center space-x-2"
+                                                        >
+                                                            <span>✏️</span>
+                                                            <span>Editar Perfil</span>
+                                                        </button>
+                                                        <div className="border-t border-gray-100 my-1"></div>
+                                                        <button
+                                                            onClick={() => handleDeleteClick(integrante)}
+                                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                                        >
+                                                            <span>🗑️</span>
+                                                            <span>Eliminar</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                <button 
+                                    onClick={handleAgregarUsuario}
+                                    className="w-full bg-gradient-to-br from-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 hover:border-[#3FD0B6] hover:bg-gray-50 transition-all duration-300 flex flex-col items-center justify-center"
+                                >
+                                    <div className="text-2xl text-gray-400 mb-1">+</div>
+                                    <div className="text-gray-500 font-medium text-sm">Agregar Nuevo Integrante</div>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && userToDelete && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 border-2 border-white/30 shadow-2xl">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-3xl">⚠️</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                ¿Eliminar Usuario?
+                            </h3>
+                            <p className="text-gray-600 text-sm mb-4">
+                                Estás a punto de eliminar a <span className="font-bold">{userToDelete.fullName}</span>. 
+                                Esta acción no se puede deshacer.
+                            </p>
+                            <p className="text-gray-500 text-xs mb-4">
+                                Para confirmar, escribe <span className="font-mono font-bold text-red-600">ELIMINAR</span> en el campo de abajo.
+                            </p>
+                            
+                            <input
+                                type="text"
+                                value={deleteConfirmationText}
+                                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                                placeholder="Escribe ELIMINAR"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-center font-mono focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                            />
+                        </div>
+
+                        <div className="flex justify-center space-x-3">
+                            <button
+                                onClick={() => {
+                                    setShowDeleteConfirm(false);
+                                    setUserToDelete(null);
+                                    setDeleteConfirmationText("");
+                                }}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                disabled={deleteConfirmationText !== "ELIMINAR" || isDeleting}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                            >
+                                {isDeleting ? 'Eliminando...' : 'Eliminar Usuario'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

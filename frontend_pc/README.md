@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FAMED Frontend
 
-## Getting Started
+Aplicación web para administración del sistema de becados médicos.
 
-First, run the development server:
+## Requisitos
+
+- Node.js 20+
+- Backend corriendo (ver `/AppBack/README.md`)
+
+## Instalación
 
 ```bash
+# Instalar dependencias
+npm install
+
+# Desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Producción
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La aplicación estará disponible en **http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuración
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Crear archivo `.env.local`:
 
-## Learn More
+```env
+# URL del backend (API Gateway)
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
 
-To learn more about Next.js, take a look at the following resources:
+Para producción, cambiar la URL al servidor donde esté desplegado el backend:
+```env
+NEXT_PUBLIC_API_URL=http://TU_IP_O_DOMINIO:8080
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estructura de Páginas
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+├── Login/           # Inicio de sesión
+├── admin/           # Panel de administrador
+│   ├── dashboard/   # Dashboard principal
+│   ├── users/       # Gestión de usuarios
+│   ├── specialties/ # Gestión de especialidades
+│   ├── verificacion/# Verificación de actividades
+│   └── exportar/    # Exportación de datos
+├── jefe/            # Panel de jefe de especialidad
+│   ├── areapersonal/# Área personal
+│   ├── rubricas/    # Gestión de rúbricas
+│   ├── cortes/      # Gestión de cohortes
+│   └── verificacion/# Verificación de actividades
+├── doctor/          # Panel de doctor (vista web)
+└── Perfil/          # Perfil de usuario
+```
 
-## Deploy on Vercel
+## Roles y Acceso
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Rol | Acceso Web | Funcionalidades |
+|-----|------------|-----------------|
+| `admin` | ✅ | Control total |
+| `admin_readonly` | ✅ | Solo lectura + exportación |
+| `jefe_especialidad` | ✅ | Gestión de su especialidad |
+| `doctor` | ❌ | Solo app móvil |
+| `becado` | ❌ | Solo app móvil |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Autenticación
+
+El sistema usa JWT almacenado en localStorage. Para proteger rutas:
+
+```tsx
+import ProtectedRoute from '@/components/ProtectedRoute';
+
+export default function MiPagina() {
+  return (
+    <ProtectedRoute>
+      {/* Contenido protegido */}
+    </ProtectedRoute>
+  );
+}
+```
+
+Para restringir por rol:
+
+```tsx
+import RoleProtectedRoute from '@/components/RoleProtectedRoute';
+
+export default function SoloAdmin() {
+  return (
+    <RoleProtectedRoute allowedRoles={['admin']}>
+      {/* Solo admin */}
+    </RoleProtectedRoute>
+  );
+}
+```
+
+## Docker
+
+Para ejecutar con Docker:
+
+```bash
+docker build -t famed-frontend .
+docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=http://localhost:8080 famed-frontend
+```
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo con hot reload |
+| `npm run build` | Build de producción |
+| `npm start` | Iniciar en producción |
+| `npm run lint` | Verificar código |

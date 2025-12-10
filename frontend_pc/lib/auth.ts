@@ -12,21 +12,25 @@ export interface User {
 }
 
 export interface LoginResponse {
-  user: User;
+  success: boolean;
   token: string;
+  rut: string;
+  fullName: string;
+  rol: string;
+  user?: User; // Mantener opcional para compatibilidad si se usa en otros lados
 }
 
-// API URL - El cliente siempre usa localhost porque el navegador necesita acceder al puerto expuesto
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+// API URL - Por defecto localhost:8080 (API Gateway), puede configurarse con NEXT_PUBLIC_API_URL para producción
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export const authService = {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(rut: string, password: string): Promise<LoginResponse> {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ rut, password }),
     });
 
     if (!response.ok) {
@@ -34,7 +38,20 @@ export const authService = {
       throw new Error(errorData.message || 'Error al iniciar sesión');
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    // Adaptar la respuesta plana del backend a la estructura que espera el frontend si es necesario
+    // O simplemente devolver la data tal cual y ajustar el frontend
+    return {
+      ...data,
+      user: {
+        id: data.id,
+        rut: data.rut,
+        nombre: data.fullName, // Asumiendo que fullName es el nombre completo
+        rol: data.rol,
+        // Otros campos que falten se pueden dejar vacíos o inferir
+      }
+    };
   },
 
   async register(userData: {
@@ -72,7 +89,17 @@ export const authService = {
       throw new Error('Token inválido o expirado');
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    return {
+      ...data,
+      user: {
+        id: data.id,
+        rut: data.rut,
+        nombre: data.fullName,
+        rol: data.rol,
+      }
+    };
   },
 
   // LocalStorage helpers
