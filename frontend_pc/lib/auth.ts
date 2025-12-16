@@ -20,7 +20,6 @@ export interface LoginResponse {
   user?: User; // Mantener opcional para compatibilidad si se usa en otros lados
 }
 
-// API URL - Por defecto localhost:8080 (API Gateway), puede configurarse con NEXT_PUBLIC_API_URL para producción
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export const authService = {
@@ -39,17 +38,14 @@ export const authService = {
     }
 
     const data = await response.json();
-    
-    // Adaptar la respuesta plana del backend a la estructura que espera el frontend si es necesario
-    // O simplemente devolver la data tal cual y ajustar el frontend
+
     return {
       ...data,
       user: {
         id: data.id,
         rut: data.rut,
-        nombre: data.fullName, // Asumiendo que fullName es el nombre completo
+        nombre: data.fullName,
         rol: data.rol,
-        // Otros campos que falten se pueden dejar vacíos o inferir
       }
     };
   },
@@ -90,7 +86,7 @@ export const authService = {
     }
 
     const data = await response.json();
-    
+
     return {
       ...data,
       user: {

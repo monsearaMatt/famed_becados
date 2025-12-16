@@ -1,27 +1,23 @@
-# Base stage
-FROM node:20-alpine AS base
-WORKDIR /app
 
-# Dependencies stage
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Builder stage
+
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Deshabilitar telemetría de Next.js durante el build
+ARG BACKEND_URL
+ENV BACKEND_URL=$BACKEND_URL
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build de Next.js
 RUN npm run build
 
-# Runner stage
 FROM base AS runner
 WORKDIR /app
 
