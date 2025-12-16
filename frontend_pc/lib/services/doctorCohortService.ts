@@ -26,6 +26,7 @@ export interface DoctorCohortAssignment {
   id: string;
   doctorId: string;
   cohortId: string;
+  specialtyId: string;
   cohortYear?: number;
   assignedAt: string;
   assignedBy?: string;
@@ -94,15 +95,15 @@ export const doctorCohortService = {
   },
 
   // Agregar un cohorte a un doctor
-  async addCohort(doctorId: string, cohortId: string): Promise<DoctorCohortAssignment> {
+  async addCohort(doctorId: string, cohortId: string, specialtyId: string): Promise<DoctorCohortAssignment> {
     const token = authService.getToken();
-    const response = await fetch(`${API_URL}/becado/doctors/${doctorId}/cohorts`, {
+    const response = await fetch(`${API_URL}/becado/doctors/${doctorId}/cohorts/${cohortId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ cohortId }),
+      body: JSON.stringify({ specialtyId }),
     });
 
     await checkAuthResponse(response);
