@@ -94,6 +94,33 @@ export const doctorCohortService = {
     return data.assignments;
   },
 
+  // Reemplazar cohortes para una especialidad específica (Más seguro para doctores con múltiples especialidades)
+  async updateSpecialtyCohorts(doctorId: string, specialtyId: string, cohortIds: string[]): Promise<string[]> {
+    const token = authService.getToken();
+    const response = await fetch(`${API_URL}/becado/doctors/${doctorId}/cohorts/specialty/${specialtyId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ cohortIds }),
+    });
+
+    await checkAuthResponse(response);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Error al actualizar cohortes de la especialidad');
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Error al actualizar cohortes de la especialidad');
+    }
+
+    return data.cohortIds; // Controller returns { success: true, cohortIds: ... }
+  },
+
   // Agregar un cohorte a un doctor
   async addCohort(doctorId: string, cohortId: string, specialtyId: string): Promise<DoctorCohortAssignment> {
     const token = authService.getToken();

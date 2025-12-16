@@ -17,7 +17,7 @@ export default function AdminUserCreatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Para selección de cohortes cuando es doctor
   const [availableCohorts, setAvailableCohorts] = useState<Cohort[]>([]);
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
@@ -42,18 +42,18 @@ export default function AdminUserCreatePage() {
       try {
         const data = await specialtyService.getSpecialties();
         setSpecialties(data);
-        
+
         // Extract unique years from cohorts
         const years = new Set<number>();
         data.forEach(s => {
-            s.cohorts?.forEach(c => years.add(c.year));
-            if (s.startYear) years.add(s.startYear);
+          s.cohorts?.forEach(c => years.add(c.year));
+          if (s.startYear) years.add(s.startYear);
         });
         // Also add current year and next year if not present, to allow creating new cohorts
         const currentYear = new Date().getFullYear();
         years.add(currentYear);
         years.add(currentYear + 1);
-        
+
         setAvailableYears(Array.from(years).sort((a, b) => b - a));
       } catch (err) {
         console.error('Error loading specialties:', err);
@@ -65,18 +65,18 @@ export default function AdminUserCreatePage() {
   // Handle pre-selection and locking
   useEffect(() => {
     if (preSelectedSpecialtyId && specialties.length > 0) {
-        const spec = specialties.find(s => s.id === preSelectedSpecialtyId);
-        if (spec) {
-            // If specialty has a startYear, use it. Otherwise keep default.
-            const yearToUse = spec.startYear ? spec.startYear.toString() : selectedYear;
-            
-            setSelectedYear(yearToUse);
-            setFormData(prev => ({ 
-                ...prev, 
-                specialtyId: spec.id,
-                entryYear: yearToUse
-            }));
-        }
+      const spec = specialties.find(s => s.id === preSelectedSpecialtyId);
+      if (spec) {
+        // If specialty has a startYear, use it. Otherwise keep default.
+        const yearToUse = spec.startYear ? spec.startYear.toString() : selectedYear;
+
+        setSelectedYear(yearToUse);
+        setFormData(prev => ({
+          ...prev,
+          specialtyId: spec.id,
+          entryYear: yearToUse
+        }));
+      }
     }
   }, [preSelectedSpecialtyId, specialties]);
 
@@ -88,23 +88,23 @@ export default function AdminUserCreatePage() {
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const year = e.target.value;
-      setSelectedYear(year);
-      setFormData(prev => ({ ...prev, entryYear: year, specialtyId: '' }));
+    const year = e.target.value;
+    setSelectedYear(year);
+    setFormData(prev => ({ ...prev, entryYear: year, specialtyId: '' }));
   };
 
   // Filter specialties based on selected year (by startYear of the specialty)
   const filteredSpecialties = specialties.filter(s => {
-      // Always include the pre-selected specialty to avoid it disappearing
-      if (preSelectedSpecialtyId && s.id === preSelectedSpecialtyId) return true;
-      
-      // Filter by the specialty's startYear
-      if (s.startYear) {
-        return s.startYear === parseInt(selectedYear);
-      }
-      
-      // If no startYear, show in all years (legacy data)
-      return true;
+    // Always include the pre-selected specialty to avoid it disappearing
+    if (preSelectedSpecialtyId && s.id === preSelectedSpecialtyId) return true;
+
+    // Filter by the specialty's startYear
+    if (s.startYear) {
+      return s.startYear === parseInt(selectedYear);
+    }
+
+    // If no startYear, show in all years (legacy data)
+    return true;
   });
 
   // Cargar cohortes cuando se selecciona especialidad y el rol es doctor
@@ -135,7 +135,7 @@ export default function AdminUserCreatePage() {
   }, [formData.specialtyId]);
 
   const handleCohortToggle = (cohortId: string) => {
-    setSelectedCohortIds(prev => 
+    setSelectedCohortIds(prev =>
       prev.includes(cohortId)
         ? prev.filter(id => id !== cohortId)
         : [...prev, cohortId]
@@ -159,7 +159,7 @@ export default function AdminUserCreatePage() {
     try {
       // 1. Create User in Auth Service
       const tempPassword = Math.random().toString(36).slice(-8);
-      
+
       const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: 'POST',
         headers: {
@@ -190,7 +190,7 @@ export default function AdminUserCreatePage() {
         const cohorts = await specialtyService.getCohorts(formData.specialtyId);
         const year = parseInt(formData.entryYear);
         const existingCohort = cohorts.find(c => c.year === year);
-        
+
         if (existingCohort) {
           cohortId = existingCohort.id;
         } else {
@@ -202,85 +202,95 @@ export default function AdminUserCreatePage() {
 
       // Call the appropriate service to create profile
       const profileEndpoint = formData.role === 'becado' ? '/becado/profile' : '/doctor/profile'; // We need to implement doctor creation too if needed
-      
+
       // Note: We only implemented POST /becado/profile. For doctors, we might need similar logic.
       // For now, let's assume we are creating a Becado or we reuse the endpoint if we unify it, 
       // but currently they are separate.
       // If role is doctor, we might need to create a doctor profile.
       // Let's stick to Becado for now as per the prompt's focus on cohorts.
-      
+
       if (formData.role === 'becado') {
         const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/becado/profile`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authService.getToken()}`
-            },
-            body: JSON.stringify({
-                userId: userId,
-                rut: formData.rut,
-                fullName: formData.fullName,
-                email: formData.email,
-                specialtyId: formData.specialtyId,
-                cohortId: cohortId,
-                scholarshipStartYear: formData.entryYear
-            })
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authService.getToken()}`
+          },
+          body: JSON.stringify({
+            userId: userId,
+            rut: formData.rut,
+            fullName: formData.fullName,
+            email: formData.email,
+            specialtyId: formData.specialtyId,
+            cohortId: cohortId,
+            scholarshipStartYear: formData.entryYear
+          })
         });
 
         if (!profileResponse.ok) {
-            throw new Error('Usuario creado en Auth, pero falló la creación del perfil de Becado.');
+          throw new Error('Usuario creado en Auth, pero falló la creación del perfil de Becado.');
         }
       } else if (formData.role === 'doctor' || formData.role === 'jefe_especialidad') {
-          // Create Doctor profile for doctors AND jefe_especialidad
-          // jefe_especialidad uses DoctorProfile to store email/phone/specialty info
-          const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor/profile`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authService.getToken()}`
-            },
-            body: JSON.stringify({
-                userId: userId,
-                rut: formData.rut,
-                fullName: formData.fullName,
-                email: formData.email,
-                specialtyId: formData.specialtyId || undefined // Optional for jefe
-            })
-          });
+        // Create Doctor profile for doctors AND jefe_especialidad
+        // jefe_especialidad uses DoctorProfile to store email/phone/specialty info
+        const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor/profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authService.getToken()}`
+          },
+          body: JSON.stringify({
+            userId: userId,
+            rut: formData.rut,
+            fullName: formData.fullName,
+            email: formData.email,
+            specialtyId: formData.specialtyId || undefined // Optional for jefe
+          })
+        });
 
-          if (!profileResponse.ok) {
-              const errorMsg = formData.role === 'doctor' 
-                ? 'Usuario creado en Auth, pero falló la creación del perfil de Doctor.'
-                : 'Usuario creado en Auth, pero falló la creación del perfil.';
-              throw new Error(errorMsg);
-          }
+        if (!profileResponse.ok) {
+          const errorMsg = formData.role === 'doctor'
+            ? 'Usuario creado en Auth, pero falló la creación del perfil de Doctor.'
+            : 'Usuario creado en Auth, pero falló la creación del perfil.';
+          throw new Error(errorMsg);
+        }
 
-          // Si es doctor y hay cohortes seleccionados, asignarlos
-          if (formData.role === 'doctor' && selectedCohortIds.length > 0) {
-            try {
-              // Obtener el doctorId del perfil creado
-              const profileData = await profileResponse.json();
-              const doctorId = profileData.profile?.id;
-              
-              if (doctorId) {
-                await doctorCohortService.assignCohorts(doctorId, selectedCohortIds);
-              }
-            } catch (cohortError) {
-              console.error('Error assigning cohorts to doctor:', cohortError);
-              // No fallar completamente, solo advertir
-              setSuccess(`Usuario creado exitosamente.\nRUT: ${formData.rut}\nContraseña temporal: ${tempPassword}\n\n⚠️ Nota: No se pudieron asignar los cohortes automáticamente. Puede asignarlos desde la configuración del doctor.`);
-              setFormData({
-                rut: '',
-                fullName: '',
-                email: '',
-                role: 'becado',
-                specialtyId: preSelectedSpecialtyId || '',
-                entryYear: preSelectedSpecialtyId ? formData.entryYear : new Date().getFullYear().toString(),
-              });
-              setSelectedCohortIds([]);
-              return;
+        // Si es doctor y hay cohortes seleccionados, asignarlos
+        if (formData.role === 'doctor' && selectedCohortIds.length > 0) {
+          try {
+            // Obtener el doctorId del perfil creado
+            const profileData = await profileResponse.json();
+            console.log('Profile data received:', profileData);
+            const doctorId = profileData.profile?.id;
+            console.log('Doctor ID extracted:', doctorId);
+            console.log('Selected cohort IDs:', selectedCohortIds);
+            console.log('Specialty ID:', formData.specialtyId);
+
+            if (doctorId) {
+              console.log('Calling updateSpecialtyCohorts...');
+              // Usar updateSpecialtyCohorts para asegurar que la asignación es específica y segura
+              // Además asegura la creación de DoctorSpecialtyAssignment implícita
+              await doctorCohortService.updateSpecialtyCohorts(doctorId, formData.specialtyId, selectedCohortIds);
+              console.log('updateSpecialtyCohorts completed successfully');
+            } else {
+              console.error('No doctorId found in profile response');
             }
+          } catch (cohortError) {
+            console.error('Error assigning cohorts to doctor:', cohortError);
+            // No fallar completamente, solo advertir
+            setSuccess(`Usuario creado exitosamente.\nRUT: ${formData.rut}\nContraseña temporal: ${tempPassword}\n\n⚠️ Nota: No se pudieron asignar los cohortes automáticamente. Puede asignarlos desde la configuración del doctor.`);
+            setFormData({
+              rut: '',
+              fullName: '',
+              email: '',
+              role: 'becado',
+              specialtyId: preSelectedSpecialtyId || '',
+              entryYear: preSelectedSpecialtyId ? formData.entryYear : new Date().getFullYear().toString(),
+            });
+            setSelectedCohortIds([]);
+            return;
           }
+        }
       }
       // Note: admin and admin_readonly roles don't need profiles in becado-service
       // They are identified by their role in auth-service only
@@ -343,17 +353,17 @@ export default function AdminUserCreatePage() {
 
       <div className="bg-white rounded-lg shadow p-6">
         {success && (
-            <div className="mb-6 bg-green-50 border border-green-200 text-green-700 p-4 rounded-md">
-                <p className="font-bold text-lg">¡Éxito!</p>
-                <p className="whitespace-pre-line">{success}</p>
-                <p className="text-sm mt-2 text-green-600">Guarde esta contraseña, no se volverá a mostrar.</p>
-            </div>
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 p-4 rounded-md">
+            <p className="font-bold text-lg">¡Éxito!</p>
+            <p className="whitespace-pre-line">{success}</p>
+            <p className="text-sm mt-2 text-green-600">Guarde esta contraseña, no se volverá a mostrar.</p>
+          </div>
         )}
 
         {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
-                {error}
-            </div>
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
+            {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -420,41 +430,41 @@ export default function AdminUserCreatePage() {
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Datos Académicos</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {formData.role === 'becado' && (
-                      <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Año de Ingreso</label>
-                          <select
-                              name="entryYear"
-                              value={selectedYear}
-                              onChange={handleYearChange}
-                              disabled={!!preSelectedSpecialtyId}
-                              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${preSelectedSpecialtyId ? 'bg-gray-200 font-medium cursor-not-allowed opacity-100' : 'bg-white'}`}
-                          >
-                              {availableYears.map(year => (
-                                  <option key={year} value={year}>{year}</option>
-                              ))}
-                          </select>
-                          <p className="text-xs text-gray-500 mt-1">Seleccione el año para ver las especialidades disponibles.</p>
-                      </div>
-                  )}
+                {formData.role === 'becado' && (
                   <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
-                      <select
-                          name="specialtyId"
-                          value={formData.specialtyId}
-                          onChange={handleChange}
-                          disabled={!!preSelectedSpecialtyId}
-                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${preSelectedSpecialtyId ? 'bg-gray-200 font-medium cursor-not-allowed opacity-100' : 'bg-white'}`}
-                          required={formData.role === 'becado' || formData.role === 'doctor'}
-                      >
-                          <option value="">Seleccione una especialidad</option>
-                          {filteredSpecialties.map(s => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}{s.startYear ? ` (${s.startYear})` : ''}
-                              </option>
-                          ))}
-                      </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Año de Ingreso</label>
+                    <select
+                      name="entryYear"
+                      value={selectedYear}
+                      onChange={handleYearChange}
+                      disabled={!!preSelectedSpecialtyId}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${preSelectedSpecialtyId ? 'bg-gray-200 font-medium cursor-not-allowed opacity-100' : 'bg-white'}`}
+                    >
+                      {availableYears.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Seleccione el año para ver las especialidades disponibles.</p>
                   </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+                  <select
+                    name="specialtyId"
+                    value={formData.specialtyId}
+                    onChange={handleChange}
+                    disabled={!!preSelectedSpecialtyId}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${preSelectedSpecialtyId ? 'bg-gray-200 font-medium cursor-not-allowed opacity-100' : 'bg-white'}`}
+                    required={formData.role === 'becado' || formData.role === 'doctor'}
+                  >
+                    <option value="">Seleccione una especialidad</option>
+                    {filteredSpecialties.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}{s.startYear ? ` (${s.startYear})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Sección de cohortes para doctores */}
@@ -474,12 +484,12 @@ export default function AdminUserCreatePage() {
                       </button>
                     )}
                   </div>
-                  
+
                   {loadingCohorts ? (
                     <div className="text-gray-500 text-sm py-4">Cargando cohortes...</div>
                   ) : availableCohorts.length === 0 ? (
                     <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 p-3 rounded-md text-sm">
-                      No hay cohortes disponibles para esta especialidad. 
+                      No hay cohortes disponibles para esta especialidad.
                       Puede crear cohortes desde la configuración de la especialidad.
                     </div>
                   ) : (
@@ -489,11 +499,10 @@ export default function AdminUserCreatePage() {
                         .map(cohort => (
                           <label
                             key={cohort.id}
-                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                              selectedCohortIds.includes(cohort.id)
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-gray-300 hover:border-gray-400 text-gray-700'
-                            }`}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${selectedCohortIds.includes(cohort.id)
+                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -519,7 +528,7 @@ export default function AdminUserCreatePage() {
             <div className="border-t border-gray-200 pt-6">
               <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-md">
                 <p className="text-sm">
-                  <strong>Nota:</strong> Los Jefes de Especialidad son roles administrativos que pueden gestionar una o más especialidades. 
+                  <strong>Nota:</strong> Los Jefes de Especialidad son roles administrativos que pueden gestionar una o más especialidades.
                   La asignación de especialidades se realiza desde la configuración del sistema.
                 </p>
               </div>

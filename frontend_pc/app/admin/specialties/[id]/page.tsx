@@ -176,7 +176,7 @@ export default function AdminSpecialtyDetailsPage() {
 
   const handleSaveCohortDates = async () => {
     if (!editingCohort) return;
-    
+
     if (!editStartDate || !editEndDate) {
       alert('Por favor ingresa ambas fechas');
       return;
@@ -184,7 +184,7 @@ export default function AdminSpecialtyDetailsPage() {
 
     const start = new Date(editStartDate);
     const end = new Date(editEndDate);
-    
+
     if (end <= start) {
       alert('La fecha de fin debe ser posterior a la fecha de inicio');
       return;
@@ -210,17 +210,25 @@ export default function AdminSpecialtyDetailsPage() {
     // El campo 'id' en users es el doctorProfile.id para doctores
     // y el campo 'userId' es el auth user id
     const doctorId = user.id;
-    
+
     setEditingDoctorCohorts({
       doctorId,
       userId: user.userId,
       fullName: user.fullName
     });
     setLoadingDoctorCohorts(true);
-    
+
     try {
       const assignments = await doctorCohortService.getDoctorCohorts(doctorId);
-      setDoctorAssignedCohortIds(assignments.map(a => a.cohortId));
+
+      // Filter to only include cohorts that belong to THIS specialty
+      // This prevents showing counts/checks for cohorts from other specialties
+      const currentSpecialtyCohortIds = cohorts.map(c => c.id);
+      const filteredAssignments = assignments.filter(a =>
+        currentSpecialtyCohortIds.includes(a.cohortId)
+      );
+
+      setDoctorAssignedCohortIds(filteredAssignments.map(a => a.cohortId));
     } catch (error) {
       console.error('Error loading doctor cohorts:', error);
       setDoctorAssignedCohortIds([]);
@@ -251,11 +259,11 @@ export default function AdminSpecialtyDetailsPage() {
   };
 
   const handleSaveDoctorCohorts = async () => {
-    if (!editingDoctorCohorts) return;
-    
+    if (!editingDoctorCohorts || !specialty) return;
+
     setSavingDoctorCohorts(true);
     try {
-      await doctorCohortService.assignCohorts(editingDoctorCohorts.doctorId, doctorAssignedCohortIds);
+      await doctorCohortService.updateSpecialtyCohorts(editingDoctorCohorts.doctorId, specialty.id, doctorAssignedCohortIds);
       closeDoctorCohortsModal();
       // Mostrar feedback de éxito
       alert('Cohortes asignados correctamente');
@@ -285,11 +293,10 @@ export default function AdminSpecialtyDetailsPage() {
 
       <div className="flex space-x-4 border-b border-gray-200 mb-6">
         <button
-          className={`pb-2 px-4 font-medium ${
-            activeTab === 'users'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
+          className={`pb-2 px-4 font-medium ${activeTab === 'users'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+            }`}
           onClick={() => setActiveTab('users')}
         >
           <div className="flex items-center">
@@ -298,11 +305,10 @@ export default function AdminSpecialtyDetailsPage() {
           </div>
         </button>
         <button
-          className={`pb-2 px-4 font-medium ${
-            activeTab === 'jefes'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
+          className={`pb-2 px-4 font-medium ${activeTab === 'jefes'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+            }`}
           onClick={() => setActiveTab('jefes')}
         >
           <div className="flex items-center">
@@ -311,11 +317,10 @@ export default function AdminSpecialtyDetailsPage() {
           </div>
         </button>
         <button
-          className={`pb-2 px-4 font-medium ${
-            activeTab === 'cohorts'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
+          className={`pb-2 px-4 font-medium ${activeTab === 'cohorts'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+            }`}
           onClick={() => setActiveTab('cohorts')}
         >
           <div className="flex items-center">
@@ -371,12 +376,11 @@ export default function AdminSpecialtyDetailsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.rut}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.role === 'jefe_especialidad' ? 'bg-purple-100 text-purple-800' :
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'jefe_especialidad' ? 'bg-purple-100 text-purple-800' :
                         user.role === 'doctor' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
+                        }`}>
                         {user.role === 'jefe_especialidad' ? 'Jefe de Especialidad' :
-                         user.role === 'doctor' ? 'Doctor' : 'Becado'}
+                          user.role === 'doctor' ? 'Doctor' : 'Becado'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email || '-'}</td>
@@ -430,9 +434,9 @@ export default function AdminSpecialtyDetailsPage() {
           )}
 
           {specialty.cohortCount && (
-             <div className="bg-blue-50 border border-blue-200 text-blue-700 p-4 rounded-md">
-                <p>Esta especialidad tiene definidas <strong>{specialty.cohortCount}</strong> cortes a partir del año <strong>{specialty.startYear}</strong>.</p>
-             </div>
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 p-4 rounded-md">
+              <p>Esta especialidad tiene definidas <strong>{specialty.cohortCount}</strong> cortes a partir del año <strong>{specialty.startYear}</strong>.</p>
+            </div>
           )}
 
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -494,7 +498,7 @@ export default function AdminSpecialtyDetailsPage() {
                     Define el período en que los becados pueden subir evidencias
                   </p>
                 </div>
-                
+
                 <div className="p-6 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -510,7 +514,7 @@ export default function AdminSpecialtyDetailsPage() {
                       Los becados pueden comenzar a subir evidencias desde esta fecha
                     </p>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Fecha de Fin
@@ -672,7 +676,7 @@ export default function AdminSpecialtyDetailsPage() {
                 Seleccione los cohortes que este doctor podrá evaluar
               </p>
             </div>
-            
+
             <div className="p-6">
               {loadingDoctorCohorts ? (
                 <div className="flex items-center justify-center py-8">
@@ -700,18 +704,17 @@ export default function AdminSpecialtyDetailsPage() {
                       {doctorAssignedCohortIds.length === cohorts.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
                     {cohorts
                       .sort((a, b) => a.year - b.year)
                       .map(cohort => (
                         <label
                           key={cohort.id}
-                          className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                            doctorAssignedCohortIds.includes(cohort.id)
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : 'border-gray-300 hover:border-gray-400 text-gray-700'
-                          }`}
+                          className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${doctorAssignedCohortIds.includes(cohort.id)
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                            }`}
                         >
                           <input
                             type="checkbox"

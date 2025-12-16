@@ -12,10 +12,16 @@ const GestionRubricas: React.FC = () => {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-    const fetchRubricas = async () => {
+    const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<string | null>(null);
+
+    const fetchRubricas = async (specialtyId?: string | null) => {
         try {
             setLoading(true);
-            const data = await rubricService.getAll();
+            // Si no hay especialidad, pasamos undefined para traer todas (o manejar lógica vacía)
+            // Pero según requerimiento, si cambia en navbar, debe filtrar.
+            const idToUse = specialtyId === undefined ? selectedSpecialtyId : specialtyId;
+
+            const data = await rubricService.getAll(idToUse || undefined);
             setRubricas(data);
             setError(null);
         } catch (err) {
@@ -26,7 +32,23 @@ const GestionRubricas: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchRubricas();
+        // Cargar inicial desde localStorage
+        const storedSpecialtyId = localStorage.getItem('selectedSpecialtyId');
+        setSelectedSpecialtyId(storedSpecialtyId);
+        fetchRubricas(storedSpecialtyId);
+
+        // Escuchar cambios en el sistema de eventos del Navbar
+        const handleSpecialtyChange = (event: CustomEvent) => {
+            const newSpecialtyId = event.detail.specialtyId;
+            setSelectedSpecialtyId(newSpecialtyId);
+            fetchRubricas(newSpecialtyId);
+        };
+
+        window.addEventListener('specialtyChanged', handleSpecialtyChange as EventListener);
+
+        return () => {
+            window.removeEventListener('specialtyChanged', handleSpecialtyChange as EventListener);
+        };
     }, []);
 
     const handleDelete = async (id: string) => {
@@ -108,7 +130,7 @@ const GestionRubricas: React.FC = () => {
                                         <span className="mr-4">📊 {rubrica.criterios.length} Criterios</span>
                                     </div>
                                     <button
-                                        onClick={() => router.push(`/jefe/rubricas/editar/${rubrica.id}`)} 
+                                        onClick={() => router.push(`/jefe/rubricas/editar/${rubrica.id}`)}
                                         className="w-full py-3 border-2 border-[#3FD0B6] text-[#3FD0B6] rounded-xl font-semibold hover:bg-[#3FD0B6] hover:text-white transition-all duration-300"
                                     >
                                         Ver Detalles

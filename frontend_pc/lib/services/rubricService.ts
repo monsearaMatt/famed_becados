@@ -66,9 +66,14 @@ const fromBackendFormat = (r: any): Rubric => ({
 });
 
 export const rubricService = {
-  async getAll(): Promise<Rubric[]> {
+  async getAll(specialtyId?: string): Promise<Rubric[]> {
     const token = authService.getToken();
-    const response = await fetch(`${API_URL}/evaluaciones/rubrics`, {
+    let url = `${API_URL}/evaluaciones/rubrics`;
+    if (specialtyId) {
+      url += `?specialtyId=${encodeURIComponent(specialtyId)}`;
+    }
+
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -80,7 +85,7 @@ export const rubricService = {
 
     const data = await response.json();
     if (!data.success) {
-        throw new Error(data.message || 'Error al obtener rúbricas');
+      throw new Error(data.message || 'Error al obtener rúbricas');
     }
 
     return data.data.map(fromBackendFormat);
@@ -108,7 +113,7 @@ export const rubricService = {
 
   async create(rubric: Rubric): Promise<void> {
     const token = authService.getToken();
-    
+
     const payload = toBackendPayload(rubric);
 
     const response = await fetch(`${API_URL}/evaluaciones/rubrics`, {
@@ -128,7 +133,7 @@ export const rubricService = {
 
   async update(id: string, rubric: Rubric): Promise<void> {
     const token = authService.getToken();
-    
+
     const payload = toBackendPayload(rubric);
 
     const response = await fetch(`${API_URL}/evaluaciones/rubrics/${id}`, {

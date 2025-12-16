@@ -12,7 +12,7 @@ export default function ListaBecados() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [specialtyName, setSpecialtyName] = useState<string>("");
-    
+
     const [mostrarPopupNavegacion, setMostrarPopupNavegacion] = useState(false);
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<ProfileUser | null>(null);
 
@@ -26,6 +26,12 @@ export default function ListaBecados() {
     const [loadingCohorts, setLoadingCohorts] = useState(false);
     const [savingCohorts, setSavingCohorts] = useState(false);
 
+    // Estado para gestionar estado del becado
+    const [editingStatusUser, setEditingStatusUser] = useState<ProfileUser | null>(null);
+    const [newStatus, setNewStatus] = useState<string>('');
+    const [newCohortId, setNewCohortId] = useState<string>('');
+    const [savingStatus, setSavingStatus] = useState(false);
+
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -34,7 +40,7 @@ export default function ListaBecados() {
             const selectedSpecialtyId = localStorage.getItem(SELECTED_SPECIALTY_KEY);
             const data = await profileService.getSpecialtyUsers(selectedSpecialtyId || undefined);
             setUsers(data);
-            
+
             // Set specialty name from first user if available
             if (data.length > 0 && data[0].specialty) {
                 setSpecialtyName(data[0].specialty);
@@ -107,12 +113,12 @@ export default function ListaBecados() {
             fullName: user.fullName
         });
         setLoadingCohorts(true);
-        
+
         try {
             // Cargar cohortes de la especialidad
             const specialtyCohorts = await specialtyService.getCohorts(selectedSpecialtyId);
             setCohorts(specialtyCohorts);
-            
+
             // Cargar cohortes asignados al doctor
             const assignments = await doctorCohortService.getDoctorCohorts(user.id);
             setDoctorAssignedCohortIds(assignments.map(a => a.cohortId));
@@ -149,7 +155,7 @@ export default function ListaBecados() {
 
     const handleSaveDoctorCohorts = async () => {
         if (!editingDoctorCohorts) return;
-        
+
         setSavingCohorts(true);
         try {
             await doctorCohortService.assignCohorts(editingDoctorCohorts.doctorId, doctorAssignedCohortIds);
@@ -163,16 +169,77 @@ export default function ListaBecados() {
         }
     };
 
+    // Funciones para gestionar estado del becado
+    const openStatusModal = async (user: ProfileUser) => {
+        setEditingStatusUser(user);
+        setNewStatus(user.status || 'ACTIVE');
+        setNewCohortId('');
+
+        // Cargar cohortes si no están cargados
+        if (cohorts.length === 0) {
+            const selectedSpecialtyId = localStorage.getItem(SELECTED_SPECIALTY_KEY);
+            if (selectedSpecialtyId) {
+                setLoadingCohorts(true);
+                try {
+                    const specialtyCohorts = await specialtyService.getCohorts(selectedSpecialtyId);
+                    setCohorts(specialtyCohorts);
+                } catch (error) {
+                    console.error('Error loading cohorts:', error);
+                } finally {
+                    setLoadingCohorts(false);
+                }
+            }
+        }
+    };
+
+    const closeStatusModal = () => {
+        setEditingStatusUser(null);
+        setNewStatus('');
+        setNewCohortId('');
+    };
+
+    const handleSaveStatus = async () => {
+        if (!editingStatusUser) return;
+        setSavingStatus(true);
+        try {
+            const payload: any = { status: newStatus };
+            if (newStatus === 'ACTIVE' && newCohortId) {
+                payload.cohortId = newCohortId;
+            }
+
+            await profileService.adminUpdateProfile(
+                editingStatusUser.id,
+                payload,
+                editingStatusUser.role
+            );
+
+            // Actualizar lista localmente
+            setUsers(prev => prev.map(u =>
+                u.id === editingStatusUser.id
+                    ? { ...u, status: newStatus as any }
+                    : u
+            ));
+
+            closeStatusModal();
+            alert('Estado actualizado correctamente');
+        } catch (error: any) {
+            console.error('Error updating status:', error);
+            alert(error.message || 'Error al actualizar el estado');
+        } finally {
+            setSavingStatus(false);
+        }
+    };
+
     return (
         <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
-            
+
             {/* Navegación  */}
             <Navbar title="Lista de Participantes" subtitle="Gestión" />
 
             {/* Contenedor  */}
             <div className="flex-1 flex items-center justify-center p-4">
                 <div className="bg-white shadow-2xl w-full max-w-6xl border-2 border-white/30 flex rounded-3xl overflow-hidden">
-                    
+
                     {/* Contenido principal */}
                     <div className="flex-1 p-6 flex flex-col">
                         {/* Header  */}
@@ -200,20 +267,19 @@ export default function ListaBecados() {
                             <div className="space-y-3 flex-1">
                                 {/* Encabezado de la tabla */}
                                 <div className="flex items-center w-full py-3 px-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 font-semibold text-gray-700 text-sm">
-                                    <div className="w-1/4">Nombre Completo</div>
-                                    <div className="w-1/4">Especialidad</div>
-                                    <div className="w-1/4">Rol</div>
-                                    <div className="w-1/4">Acciones</div>
+                                    <div className="w-1/5">Rol</div>
+                                    <div className="w-1/5">Estado</div>
+                                    <div className="w-1/5">Acciones</div>
                                 </div>
-                                
+
                                 {/* Usuarios */}
                                 {users.map((user) => (
-                                    <div 
-                                        key={user.rut} 
+                                    <div
+                                        key={user.rut}
                                         className="flex items-center w-full py-3 px-4 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
                                     >
-                                        <div className="w-1/4">
-                                            <button 
+                                        <div className="w-1/5">
+                                            <button
                                                 onClick={() => abrirPopupNavegacion(user)}
                                                 className="text-gray-800 font-medium hover:text-[#3FD0B6] hover:underline transition-colors text-left flex items-center space-x-2"
                                             >
@@ -223,17 +289,28 @@ export default function ListaBecados() {
                                                 <span>{user.fullName}</span>
                                             </button>
                                         </div>
-                                        <div className="w-1/4">
+                                        <div className="w-1/5">
                                             <span className="text-gray-600 text-sm">
                                                 {user.specialty}
                                             </span>
                                         </div>
-                                        <div className="w-1/4">
+                                        <div className="w-1/5">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
                                                 {user.role}
                                             </span>
                                         </div>
-                                        <div className="w-1/4">
+                                        <div className="w-1/5">
+                                            {user.role === 'becado' && (
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                                                    user.status === 'FROZEN' ? 'bg-blue-100 text-blue-800' :
+                                                        user.status === 'GRADUATED' ? 'bg-purple-100 text-purple-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                    {user.status || 'ACTIVE'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="w-1/5 flex gap-2">
                                             {user.role === 'doctor' && (
                                                 <button
                                                     onClick={() => openDoctorCohortsModal(user)}
@@ -244,6 +321,18 @@ export default function ListaBecados() {
                                                         <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
                                                     </svg>
                                                     Cohortes
+                                                </button>
+                                            )}
+                                            {user.role === 'becado' && (
+                                                <button
+                                                    onClick={() => openStatusModal(user)}
+                                                    className="text-[#3FD0B6] hover:text-[#2A9D8F] font-medium flex items-center gap-1 text-sm"
+                                                    title="Cambiar estado"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Estado
                                                 </button>
                                             )}
                                         </div>
@@ -267,7 +356,7 @@ export default function ListaBecados() {
                                 {usuarioSeleccionado.role}
                             </p>
                         </div>
-                        
+
                         <div className="space-y-2 mb-4">
                             <button
                                 onClick={() => navegarA("/Perfil")}
@@ -279,9 +368,8 @@ export default function ListaBecados() {
                                     <div className="text-xs text-gray-500">Ver perfil completo</div>
                                 </div>
                             </button>
-                            {/* Removed Homepage button as it might not be relevant for viewing other users */}
                         </div>
-                        
+
                         <div className="flex justify-center">
                             <button
                                 onClick={cerrarPopupNavegacion}
@@ -309,7 +397,7 @@ export default function ListaBecados() {
                                 Seleccione los cohortes que este doctor podrá evaluar
                             </p>
                         </div>
-                        
+
                         <div className="mb-6">
                             {loadingCohorts ? (
                                 <div className="flex items-center justify-center py-8">
@@ -337,18 +425,17 @@ export default function ListaBecados() {
                                             {doctorAssignedCohortIds.length === cohorts.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
                                         </button>
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
                                         {cohorts
                                             .sort((a, b) => a.year - b.year)
                                             .map(cohort => (
                                                 <label
                                                     key={cohort.id}
-                                                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-300 ${
-                                                        doctorAssignedCohortIds.includes(cohort.id)
-                                                            ? 'border-[#3FD0B6] bg-[#3FD0B6]/10 text-[#2A9D8F]'
-                                                            : 'border-gray-300 hover:border-gray-400 text-gray-700'
-                                                    }`}
+                                                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-300 ${doctorAssignedCohortIds.includes(cohort.id)
+                                                        ? 'border-[#3FD0B6] bg-[#3FD0B6]/10 text-[#2A9D8F]'
+                                                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                                                        }`}
                                                 >
                                                     <input
                                                         type="checkbox"
@@ -387,6 +474,76 @@ export default function ListaBecados() {
                                 ) : (
                                     'Guardar Cambios'
                                 )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para editar estado de becado */}
+            {editingStatusUser && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 border-2 border-white/30 shadow-2xl">
+                        <div className="text-center mb-4">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                                Gestionar Estado
+                            </h3>
+                            <p className="text-gray-600 text-sm">
+                                {editingStatusUser.fullName}
+                            </p>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Estado Actual</label>
+                                <select
+                                    value={newStatus}
+                                    onChange={(e) => setNewStatus(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-[#3FD0B6] focus:border-[#3FD0B6]"
+                                >
+                                    <option value="ACTIVE">Activo</option>
+                                    <option value="FROZEN">Congelado</option>
+                                    <option value="GRADUATED">Egresado</option>
+                                    <option value="WITHDRAWN">Retirado</option>
+                                    <option value="RESIGNED">Renunciado</option>
+                                </select>
+                            </div>
+
+                            {/* Mostrar selector de cohorte si se reactiva o si está activo */}
+                            {(newStatus === 'ACTIVE') && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Asignar Nuevo Cohorte (Reingreso)
+                                    </label>
+                                    <select
+                                        value={newCohortId}
+                                        onChange={(e) => setNewCohortId(e.target.value)}
+                                        disabled={loadingCohorts}
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-[#3FD0B6] focus:border-[#3FD0B6]"
+                                    >
+                                        <option value="">Seleccionar Cohorte...</option>
+                                        {cohorts.map(c => (
+                                            <option key={c.id} value={c.id}>Cohorte {c.year}</option>
+                                        ))}
+                                    </select>
+                                    {loadingCohorts && <p className="text-xs text-gray-500 mt-1">Cargando cohortes...</p>}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={closeStatusModal}
+                                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveStatus}
+                                disabled={savingStatus}
+                                className="px-4 py-2 bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-medium disabled:opacity-50 flex items-center"
+                            >
+                                {savingStatus ? 'Guardando...' : 'Guardar'}
                             </button>
                         </div>
                     </div>

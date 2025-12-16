@@ -123,27 +123,16 @@ export default function DoctorAssignmentsPage() {
             const specialty = specialties.find(s => s.id === specialtyId);
             if (!specialty) return;
 
-            const currentSpecialtyAssignments = currentAssignments.filter(
-                a => a.specialtyId === specialtyId
-            );
+            // Get the list of cohort IDs that are currently checked/assigned for this specialty
             const newSelection = specialty.cohorts.filter(c => c.assigned).map(c => c.id);
-            const currentSelection = currentSpecialtyAssignments.map(a => a.cohortId);
 
-            const toAdd = newSelection.filter(cohortId => !currentSelection.includes(cohortId));
-            const toRemove = currentSelection.filter(cohortId => !newSelection.includes(cohortId));
-
-            for (const cohortId of toAdd) {
-                await doctorCohortService.addCohort(doctorId, cohortId, specialtyId);
-            }
-
-            for (const cohortId of toRemove) {
-                await doctorCohortService.removeCohort(doctorId, cohortId);
-            }
+            // Use atomic update per specialty to avoid race conditions and partial updates
+            await doctorCohortService.updateSpecialtyCohorts(doctorId, specialtyId, newSelection);
 
             const updatedAssignments = await doctorCohortService.getDoctorCohorts(doctorId);
             setCurrentAssignments(updatedAssignments);
 
-            alert('As ignaciones guardadas correctamente');
+            alert('Asignaciones guardadas correctamente');
         } catch (error: any) {
             console.error('Error saving assignments:', error);
             alert(error.message || 'Error al guardar asignaciones');

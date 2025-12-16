@@ -35,14 +35,14 @@ interface CommunityDisplay extends PendingCommunityActivity {
 
 const VerificarActividades: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('academic');
-    
+
     // Estado para actividades académicas
     const [activities, setActivities] = useState<ActivityDisplay[]>([]);
     // Estado para actividades comunitarias
     const [communityActivities, setCommunityActivities] = useState<CommunityDisplay[]>([]);
     // Estado para procedimientos
     const [procedureRecords, setProcedureRecords] = useState<PendingProcedureRecord[]>([]);
-    
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -54,6 +54,7 @@ const VerificarActividades: React.FC = () => {
     const [communitySeleccionada, setCommunitySeleccionada] = useState<CommunityDisplay | null>(null);
     const [procedureSeleccionado, setProcedureSeleccionado] = useState<PendingProcedureRecord | null>(null);
     const [mostrarModal, setMostrarModal] = useState(false);
+    const [vistaPrevia, setVistaPrevia] = useState<{ url: string; mimeType: string; name: string } | null>(null);
 
     // Cargar actividades al montar el componente
     useEffect(() => {
@@ -74,19 +75,19 @@ const VerificarActividades: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             // Obtener especialidad seleccionada del localStorage
-            const selectedSpecialtyId = typeof window !== 'undefined' 
-                ? localStorage.getItem('selectedSpecialtyId') || undefined 
+            const selectedSpecialtyId = typeof window !== 'undefined'
+                ? localStorage.getItem('selectedSpecialtyId') || undefined
                 : undefined;
-            
+
             // Cargar todos los tipos en paralelo, manejando errores individualmente
             const [academicResult, communityResult, proceduresResult] = await Promise.allSettled([
                 verificationService.getPendingActivities(undefined, selectedSpecialtyId),
                 verificationService.getPendingCommunityActivities(undefined, selectedSpecialtyId),
                 verificationService.getPendingProcedureRecords(undefined, selectedSpecialtyId)
             ]);
-            
+
             // Mapear actividades académicas
             if (academicResult.status === 'fulfilled') {
                 const mappedAcademic: ActivityDisplay[] = academicResult.value.activities.map(activity => ({
@@ -98,7 +99,7 @@ const VerificarActividades: React.FC = () => {
                 console.error('Error cargando actividades académicas:', academicResult.reason);
                 setActivities([]);
             }
-            
+
             // Mapear actividades comunitarias
             if (communityResult.status === 'fulfilled') {
                 const mappedCommunity: CommunityDisplay[] = communityResult.value.activities.map(activity => ({
@@ -110,7 +111,7 @@ const VerificarActividades: React.FC = () => {
                 console.error('Error cargando actividades comunitarias:', communityResult.reason);
                 setCommunityActivities([]);
             }
-            
+
             // Procedimientos
             if (proceduresResult.status === 'fulfilled') {
                 setProcedureRecords(proceduresResult.value.records);
@@ -126,7 +127,7 @@ const VerificarActividades: React.FC = () => {
     };
 
     const getIconoTipo = (tipo: string) => {
-        switch(tipo) {
+        switch (tipo) {
             case 'curso':
                 return '📚';
             case 'congreso':
@@ -145,7 +146,7 @@ const VerificarActividades: React.FC = () => {
     };
 
     const getColorEstado = (estado: string) => {
-        switch(estado) {
+        switch (estado) {
             case 'approved':
                 return 'bg-green-100 text-green-800 border-green-200';
             case 'rejected':
@@ -158,7 +159,7 @@ const VerificarActividades: React.FC = () => {
     };
 
     const getTextoEstado = (estado: string) => {
-        switch(estado) {
+        switch (estado) {
             case 'approved':
                 return 'Aprobado';
             case 'rejected':
@@ -171,7 +172,7 @@ const VerificarActividades: React.FC = () => {
     };
 
     const getColorTipo = (tipo: string) => {
-        switch(tipo) {
+        switch (tipo) {
             case 'curso':
                 return 'bg-blue-100 text-blue-800 border-blue-200';
             case 'congreso':
@@ -198,10 +199,10 @@ const VerificarActividades: React.FC = () => {
 
     // Filtrar actividades
     const actividadesFiltradas = activities.filter(activity => {
-        const estado = activity.status === 'pending' ? 'pendiente' : 
-                       activity.status === 'approved' ? 'aprobado' : 
-                       activity.status === 'rejected' ? 'rechazado' : activity.status;
-        
+        const estado = activity.status === 'pending' ? 'pendiente' :
+            activity.status === 'approved' ? 'aprobado' :
+                activity.status === 'rejected' ? 'rechazado' : activity.status;
+
         const coincideEstado = filtroEstado === "todos" || estado === filtroEstado;
         const coincideTipo = filtroTipo === "todos" || activity.type === filtroTipo;
         const coincideBecado = activity.scholarName.toLowerCase().includes(filtroBecado.toLowerCase());
@@ -224,16 +225,16 @@ const VerificarActividades: React.FC = () => {
         try {
             setActionLoading(actividadSeleccionada.id);
             await verificationService.verifyActivity(actividadSeleccionada.id, status);
-            
+
             // Actualizar la lista local
-            setActivities(prev => prev.map(act => 
-                act.id === actividadSeleccionada.id 
-                    ? { ...act, status } 
+            setActivities(prev => prev.map(act =>
+                act.id === actividadSeleccionada.id
+                    ? { ...act, status }
                     : act
             ));
-            
+
             cerrarModal();
-            
+
             // Mostrar mensaje de éxito
             alert(`Actividad ${status === 'approved' ? 'aprobada' : 'rechazada'} exitosamente`);
         } catch (err) {
@@ -250,13 +251,13 @@ const VerificarActividades: React.FC = () => {
         try {
             setActionLoading(communitySeleccionada.id);
             await verificationService.verifyCommunityActivity(communitySeleccionada.id, status);
-            
-            setCommunityActivities(prev => prev.map(act => 
-                act.id === communitySeleccionada.id 
-                    ? { ...act, status } 
+
+            setCommunityActivities(prev => prev.map(act =>
+                act.id === communitySeleccionada.id
+                    ? { ...act, status }
                     : act
             ));
-            
+
             setMostrarModal(false);
             setCommunitySeleccionada(null);
             alert(`Actividad comunitaria ${status === 'approved' ? 'aprobada' : 'rechazada'} exitosamente`);
@@ -274,13 +275,13 @@ const VerificarActividades: React.FC = () => {
         try {
             setActionLoading(procedureSeleccionado.id);
             await verificationService.verifyProcedureRecord(procedureSeleccionado.id, status);
-            
-            setProcedureRecords(prev => prev.map(rec => 
-                rec.id === procedureSeleccionado.id 
-                    ? { ...rec, status } 
+
+            setProcedureRecords(prev => prev.map(rec =>
+                rec.id === procedureSeleccionado.id
+                    ? { ...rec, status }
                     : rec
             ));
-            
+
             setMostrarModal(false);
             setProcedureSeleccionado(null);
             alert(`Procedimiento ${status === 'approved' ? 'aprobado' : 'rechazado'} exitosamente`);
@@ -293,7 +294,7 @@ const VerificarActividades: React.FC = () => {
 
     // Iconos para actividades comunitarias
     const getIconoCommunity = (tipo: string) => {
-        switch(tipo) {
+        switch (tipo) {
             case 'charla':
                 return '🎤';
             case 'taller':
@@ -327,6 +328,53 @@ const VerificarActividades: React.FC = () => {
         { value: "investigacion", label: "Investigación" },
         { value: "otro", label: "Otros" }
     ];
+
+    // Calular estadísticas logic comes after helpers
+
+    // Función para previsualizar archivo
+    const previsualizarArchivo = (attachment: { name: string; mimeType: string; contentBase64: string }) => {
+        try {
+            if (!attachment.contentBase64 || attachment.contentBase64.includes('...')) {
+                alert('Este archivo de prueba no tiene contenido para visualizar');
+                return;
+            }
+
+            // Convertir base64 a blob
+            const byteCharacters = atob(attachment.contentBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: attachment.mimeType });
+
+            const url = window.URL.createObjectURL(blob);
+            setVistaPrevia({ url, mimeType: attachment.mimeType, name: attachment.name });
+        } catch (error) {
+            console.error('Error al previsualizar:', error);
+            alert('Error al previsualizar el archivo.');
+        }
+    };
+
+    const cerrarVistaPrevia = () => {
+        if (vistaPrevia?.url) {
+            window.URL.revokeObjectURL(vistaPrevia.url);
+        }
+        setVistaPrevia(null);
+    };
+
+    const getIconoArchivo = (mimeType: string) => {
+        if (mimeType.includes('pdf')) return '📄';
+        if (mimeType.includes('image')) return '🖼️';
+        if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+        if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
+        if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📽️';
+        return '📎';
+    };
+
+    const puedePrevisualizar = (mimeType: string) => {
+        return mimeType.includes('pdf') || mimeType.includes('image');
+    };
 
     // Calcular estadísticas
     const totalActivities = activities.length;
@@ -375,14 +423,14 @@ const VerificarActividades: React.FC = () => {
 
     return (
         <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
-            
+
             {/* Navegación  */}
             <Navbar title="Jefe de Beca" subtitle="Verificación de Actividades" />
 
             {/* Contenedor  */}
             <div className="flex-1 flex items-center justify-center p-4">
                 <div className="bg-white shadow-2xl w-full max-w-7xl border-2 border-white/30 flex rounded-3xl overflow-hidden">
-                    
+
                     {/* Contenido principal */}
                     <div className="flex-1 p-8 flex flex-col">
                         {/* Header  */}
@@ -396,11 +444,10 @@ const VerificarActividades: React.FC = () => {
                             <div className="inline-flex bg-gray-100 rounded-xl p-1">
                                 <button
                                     onClick={() => setActiveTab('academic')}
-                                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                                        activeTab === 'academic'
-                                            ? 'bg-white text-[#3FD0B6] shadow-md'
-                                            : 'text-gray-600 hover:text-gray-800'
-                                    }`}
+                                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === 'academic'
+                                        ? 'bg-white text-[#3FD0B6] shadow-md'
+                                        : 'text-gray-600 hover:text-gray-800'
+                                        }`}
                                 >
                                     📚 Académicas
                                     {activities.filter(a => a.status === 'pending').length > 0 && (
@@ -411,11 +458,10 @@ const VerificarActividades: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('community')}
-                                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                                        activeTab === 'community'
-                                            ? 'bg-white text-[#3FD0B6] shadow-md'
-                                            : 'text-gray-600 hover:text-gray-800'
-                                    }`}
+                                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === 'community'
+                                        ? 'bg-white text-[#3FD0B6] shadow-md'
+                                        : 'text-gray-600 hover:text-gray-800'
+                                        }`}
                                 >
                                     🤝 Comunitarias
                                     {communityActivities.filter(a => a.status === 'pending').length > 0 && (
@@ -426,11 +472,10 @@ const VerificarActividades: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('procedures')}
-                                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                                        activeTab === 'procedures'
-                                            ? 'bg-white text-[#3FD0B6] shadow-md'
-                                            : 'text-gray-600 hover:text-gray-800'
-                                    }`}
+                                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === 'procedures'
+                                        ? 'bg-white text-[#3FD0B6] shadow-md'
+                                        : 'text-gray-600 hover:text-gray-800'
+                                        }`}
                                 >
                                     🏥 Procedimientos
                                     {procedureRecords.filter(p => p.status === 'pending').length > 0 && (
@@ -445,177 +490,177 @@ const VerificarActividades: React.FC = () => {
                         {/* Contenido según tab activo */}
                         {activeTab === 'academic' && (
                             <>
-                        {/* Estadísticas */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] rounded-2xl p-4 text-white text-center">
-                                <div className="text-2xl font-bold">{totalActivities}</div>
-                                <div className="text-sm opacity-90">Total Actividades</div>
-                            </div>
-                            <div className="bg-yellow-100 rounded-2xl p-4 text-center border border-yellow-200">
-                                <div className="text-2xl font-bold text-yellow-800">{pendingCount}</div>
-                                <div className="text-sm text-yellow-700">Pendientes</div>
-                            </div>
-                            <div className="bg-green-100 rounded-2xl p-4 text-center border border-green-200">
-                                <div className="text-2xl font-bold text-green-800">{approvedCount}</div>
-                                <div className="text-sm text-green-700">Aprobadas</div>
-                            </div>
-                            <div className="bg-red-100 rounded-2xl p-4 text-center border border-red-200">
-                                <div className="text-2xl font-bold text-red-800">{rejectedCount}</div>
-                                <div className="text-sm text-red-700">Rechazadas</div>
-                            </div>
-                        </div>
+                                {/* Estadísticas */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                                    <div className="bg-gradient-to-r from-[#3FD0B6] to-[#2A9D8F] rounded-2xl p-4 text-white text-center">
+                                        <div className="text-2xl font-bold">{totalActivities}</div>
+                                        <div className="text-sm opacity-90">Total Actividades</div>
+                                    </div>
+                                    <div className="bg-yellow-100 rounded-2xl p-4 text-center border border-yellow-200">
+                                        <div className="text-2xl font-bold text-yellow-800">{pendingCount}</div>
+                                        <div className="text-sm text-yellow-700">Pendientes</div>
+                                    </div>
+                                    <div className="bg-green-100 rounded-2xl p-4 text-center border border-green-200">
+                                        <div className="text-2xl font-bold text-green-800">{approvedCount}</div>
+                                        <div className="text-sm text-green-700">Aprobadas</div>
+                                    </div>
+                                    <div className="bg-red-100 rounded-2xl p-4 text-center border border-red-200">
+                                        <div className="text-2xl font-bold text-red-800">{rejectedCount}</div>
+                                        <div className="text-sm text-red-700">Rechazadas</div>
+                                    </div>
+                                </div>
 
-                        {/* Filtros */}
-                        <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <label className="block text-gray-700 text-sm font-medium mb-2">
-                                        Buscar por becado:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={filtroBecado}
-                                        onChange={(e) => setFiltroBecado(e.target.value)}
-                                        placeholder="Nombre del becado..."
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500 transition-all duration-300"
-                                    />
+                                {/* Filtros */}
+                                <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-200">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div>
+                                            <label className="block text-gray-700 text-sm font-medium mb-2">
+                                                Buscar por becado:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={filtroBecado}
+                                                onChange={(e) => setFiltroBecado(e.target.value)}
+                                                placeholder="Nombre del becado..."
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black placeholder-gray-500 transition-all duration-300"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 text-sm font-medium mb-2">
+                                                Filtrar por estado:
+                                            </label>
+                                            <select
+                                                value={filtroEstado}
+                                                onChange={(e) => setFiltroEstado(e.target.value)}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
+                                            >
+                                                {estados.map((estado) => (
+                                                    <option key={estado.value} value={estado.value}>
+                                                        {estado.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 text-sm font-medium mb-2">
+                                                Filtrar por tipo:
+                                            </label>
+                                            <select
+                                                value={filtroTipo}
+                                                onChange={(e) => setFiltroTipo(e.target.value)}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
+                                            >
+                                                {tipos.map((tipo) => (
+                                                    <option key={tipo.value} value={tipo.value}>
+                                                        {tipo.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Mostrando {actividadesFiltradas.length} de {totalActivities} actividades
+                                        </span>
+                                        <button
+                                            onClick={loadAllData}
+                                            className="text-sm text-[#3FD0B6] hover:text-[#2A9D8F] font-medium flex items-center gap-1"
+                                        >
+                                            🔄 Actualizar
+                                        </button>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-gray-700 text-sm font-medium mb-2">
-                                        Filtrar por estado:
-                                    </label>
-                                    <select
-                                        value={filtroEstado}
-                                        onChange={(e) => setFiltroEstado(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
-                                    >
-                                        {estados.map((estado) => (
-                                            <option key={estado.value} value={estado.value}>
-                                                {estado.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-gray-700 text-sm font-medium mb-2">
-                                        Filtrar por tipo:
-                                    </label>
-                                    <select
-                                        value={filtroTipo}
-                                        onChange={(e) => setFiltroTipo(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-black transition-all duration-300"
-                                    >
-                                        {tipos.map((tipo) => (
-                                            <option key={tipo.value} value={tipo.value}>
-                                                {tipo.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="mt-4 flex justify-between items-center">
-                                <span className="text-sm text-gray-600">
-                                    Mostrando {actividadesFiltradas.length} de {totalActivities} actividades
-                                </span>
-                                <button
-                                    onClick={loadAllData}
-                                    className="text-sm text-[#3FD0B6] hover:text-[#2A9D8F] font-medium flex items-center gap-1"
-                                >
-                                    🔄 Actualizar
-                                </button>
-                            </div>
-                        </div>
 
-                        {/* Lista de actividades */}
-                        <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px]">
-                            
-                            {actividadesFiltradas.length > 0 ? (
-                                actividadesFiltradas.map((activity) => (
-                                    <div 
-                                        key={activity.id} 
-                                        className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
-                                    >
-                                        <div className="p-6">
-                                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                                {/* Información de la actividad */}
-                                                <div className="flex items-center space-x-4 flex-1">
-                                                    <div className="w-16 h-16 bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] rounded-2xl flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-white text-2xl">{getIconoTipo(activity.type)}</span>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h3 className="font-semibold text-gray-800 text-lg">
-                                                            {activity.title}
-                                                        </h3>
-                                                        <div className="flex items-center space-x-4 mt-2 flex-wrap gap-2">
-                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getColorTipo(activity.type)}`}>
-                                                                {activity.displayType}
+                                {/* Lista de actividades */}
+                                <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px]">
+
+                                    {actividadesFiltradas.length > 0 ? (
+                                        actividadesFiltradas.map((activity) => (
+                                            <div
+                                                key={activity.id}
+                                                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
+                                            >
+                                                <div className="p-6">
+                                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                                        {/* Información de la actividad */}
+                                                        <div className="flex items-center space-x-4 flex-1">
+                                                            <div className="w-16 h-16 bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] rounded-2xl flex items-center justify-center flex-shrink-0">
+                                                                <span className="text-white text-2xl">{getIconoTipo(activity.type)}</span>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <h3 className="font-semibold text-gray-800 text-lg">
+                                                                    {activity.title}
+                                                                </h3>
+                                                                <div className="flex items-center space-x-4 mt-2 flex-wrap gap-2">
+                                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getColorTipo(activity.type)}`}>
+                                                                        {activity.displayType}
+                                                                    </span>
+                                                                    <span className="text-gray-500 text-sm">
+                                                                        {activity.hours} horas
+                                                                    </span>
+                                                                    <span className="text-gray-500 text-sm">
+                                                                        {formatDate(activity.date)}
+                                                                    </span>
+                                                                    {activity.attachments.length > 0 && (
+                                                                        <span className="text-gray-500 text-sm">
+                                                                            📎 {activity.attachments.length} archivo(s)
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {activity.description && (
+                                                                    <p className="text-gray-600 text-sm mt-2 line-clamp-2">
+                                                                        {activity.description}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Información del becado */}
+                                                        <div className="flex-1 lg:px-4">
+                                                            <h4 className="font-medium text-gray-800 mb-1">
+                                                                {activity.scholarName}
+                                                            </h4>
+                                                            <p className="text-gray-600 text-sm">
+                                                                RUT: {activity.scholarRut}
+                                                            </p>
+                                                            <p className="text-gray-500 text-xs mt-1">
+                                                                Enviado: {formatDate(activity.createdAt)}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Estado y acciones */}
+                                                        <div className="flex flex-col items-end space-y-3">
+                                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getColorEstado(activity.status)}`}>
+                                                                {getTextoEstado(activity.status)}
                                                             </span>
-                                                            <span className="text-gray-500 text-sm">
-                                                                {activity.hours} horas
-                                                            </span>
-                                                            <span className="text-gray-500 text-sm">
-                                                                {formatDate(activity.date)}
-                                                            </span>
-                                                            {activity.attachments.length > 0 && (
-                                                                <span className="text-gray-500 text-sm">
-                                                                    📎 {activity.attachments.length} archivo(s)
-                                                                </span>
+                                                            {activity.status === "pending" && (
+                                                                <button
+                                                                    onClick={() => abrirModal(activity)}
+                                                                    className="bg-[#3FD0B6] text-white rounded-lg px-4 py-2 text-sm hover:bg-[#2A9D8F] transition-all duration-300 font-medium"
+                                                                >
+                                                                    Revisar
+                                                                </button>
                                                             )}
                                                         </div>
-                                                        {activity.description && (
-                                                            <p className="text-gray-600 text-sm mt-2 line-clamp-2">
-                                                                {activity.description}
-                                                            </p>
-                                                        )}
                                                     </div>
                                                 </div>
-
-                                                {/* Información del becado */}
-                                                <div className="flex-1 lg:px-4">
-                                                    <h4 className="font-medium text-gray-800 mb-1">
-                                                        {activity.scholarName}
-                                                    </h4>
-                                                    <p className="text-gray-600 text-sm">
-                                                        RUT: {activity.scholarRut}
-                                                    </p>
-                                                    <p className="text-gray-500 text-xs mt-1">
-                                                        Enviado: {formatDate(activity.createdAt)}
-                                                    </p>
-                                                </div>
-
-                                                {/* Estado y acciones */}
-                                                <div className="flex flex-col items-end space-y-3">
-                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getColorEstado(activity.status)}`}>
-                                                        {getTextoEstado(activity.status)}
-                                                    </span>
-                                                    {activity.status === "pending" && (
-                                                        <button 
-                                                            onClick={() => abrirModal(activity)}
-                                                            className="bg-[#3FD0B6] text-white rounded-lg px-4 py-2 text-sm hover:bg-[#2A9D8F] transition-all duration-300 font-medium"
-                                                        >
-                                                            Revisar
-                                                        </button>
-                                                    )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex items-center justify-center w-full py-12 bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200">
+                                            <div className="text-center text-gray-500">
+                                                <div className="text-5xl mb-4">📋</div>
+                                                <div className="font-medium text-lg mb-2">No se encontraron actividades</div>
+                                                <div className="text-sm">
+                                                    {totalActivities === 0
+                                                        ? "No hay actividades académicas pendientes de verificación"
+                                                        : "Intenta con otros criterios de búsqueda"
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="flex items-center justify-center w-full py-12 bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200">
-                                    <div className="text-center text-gray-500">
-                                        <div className="text-5xl mb-4">📋</div>
-                                        <div className="font-medium text-lg mb-2">No se encontraron actividades</div>
-                                        <div className="text-sm">
-                                            {totalActivities === 0 
-                                                ? "No hay actividades académicas pendientes de verificación"
-                                                : "Intenta con otros criterios de búsqueda"
-                                            }
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
                             </>
                         )}
 
@@ -646,8 +691,8 @@ const VerificarActividades: React.FC = () => {
                                 <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                                     {communityActivities.length > 0 ? (
                                         communityActivities.map((activity) => (
-                                            <div 
-                                                key={activity.id} 
+                                            <div
+                                                key={activity.id}
                                                 className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
                                             >
                                                 <div className="p-6">
@@ -701,7 +746,7 @@ const VerificarActividades: React.FC = () => {
                                                                 {getTextoEstado(activity.status)}
                                                             </span>
                                                             {activity.status === "pending" && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         setCommunitySeleccionada(activity);
                                                                         setMostrarModal(true);
@@ -756,8 +801,8 @@ const VerificarActividades: React.FC = () => {
                                 <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px]">
                                     {procedureRecords.length > 0 ? (
                                         procedureRecords.map((record) => (
-                                            <div 
-                                                key={record.id} 
+                                            <div
+                                                key={record.id}
                                                 className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300"
                                             >
                                                 <div className="p-6">
@@ -810,7 +855,7 @@ const VerificarActividades: React.FC = () => {
                                                                 {getTextoEstado(record.status)}
                                                             </span>
                                                             {record.status === "pending" && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         setProcedureSeleccionado(record);
                                                                         setMostrarModal(true);
@@ -917,59 +962,73 @@ const VerificarActividades: React.FC = () => {
                                             <li key={att.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-2xl">
-                                                        {att.mimeType.includes('pdf') ? '📄' : 
-                                                         att.mimeType.includes('image') ? '🖼️' : 
-                                                         att.mimeType.includes('word') ? '📝' : '📎'}
+                                                        {getIconoArchivo(att.mimeType)}
                                                     </span>
                                                     <div>
                                                         <p className="font-medium text-gray-800 text-sm">{att.name}</p>
                                                         <p className="text-gray-500 text-xs">{att.mimeType}</p>
                                                     </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => {
-                                                        try {
-                                                            // Verificar si hay contenido base64 válido
-                                                            if (!att.contentBase64 || att.contentBase64.includes('...')) {
-                                                                alert('Este archivo de prueba no tiene contenido descargable');
-                                                                return;
+                                                <div className="flex items-center gap-2">
+                                                    {puedePrevisualizar(att.mimeType) && (
+                                                        <button
+                                                            onClick={() => previsualizarArchivo(att)}
+                                                            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Ver archivo"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                            <span className="text-sm">Ver</span>
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            try {
+                                                                // Verificar si hay contenido base64 válido
+                                                                if (!att.contentBase64 || att.contentBase64.includes('...')) {
+                                                                    alert('Este archivo de prueba no tiene contenido descargable');
+                                                                    return;
+                                                                }
+
+                                                                // Convertir base64 a blob
+                                                                const byteCharacters = atob(att.contentBase64);
+                                                                const byteNumbers = new Array(byteCharacters.length);
+                                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                                }
+                                                                const byteArray = new Uint8Array(byteNumbers);
+                                                                const blob = new Blob([byteArray], { type: att.mimeType });
+
+                                                                // Crear URL y descargar
+                                                                const url = window.URL.createObjectURL(blob);
+                                                                const link = document.createElement('a');
+                                                                link.href = url;
+                                                                link.download = att.name;
+                                                                link.style.display = 'none';
+                                                                document.body.appendChild(link);
+                                                                link.click();
+
+                                                                // Limpiar
+                                                                setTimeout(() => {
+                                                                    document.body.removeChild(link);
+                                                                    window.URL.revokeObjectURL(url);
+                                                                }, 100);
+                                                            } catch (error) {
+                                                                console.error('Error al descargar:', error);
+                                                                alert('Error al descargar el archivo. El contenido puede estar corrupto.');
                                                             }
-                                                            
-                                                            // Convertir base64 a blob
-                                                            const byteCharacters = atob(att.contentBase64);
-                                                            const byteNumbers = new Array(byteCharacters.length);
-                                                            for (let i = 0; i < byteCharacters.length; i++) {
-                                                                byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                                            }
-                                                            const byteArray = new Uint8Array(byteNumbers);
-                                                            const blob = new Blob([byteArray], { type: att.mimeType });
-                                                            
-                                                            // Crear URL y descargar
-                                                            const url = window.URL.createObjectURL(blob);
-                                                            const link = document.createElement('a');
-                                                            link.href = url;
-                                                            link.download = att.name;
-                                                            link.style.display = 'none';
-                                                            document.body.appendChild(link);
-                                                            link.click();
-                                                            
-                                                            // Limpiar
-                                                            setTimeout(() => {
-                                                                document.body.removeChild(link);
-                                                                window.URL.revokeObjectURL(url);
-                                                            }, 100);
-                                                        } catch (error) {
-                                                            console.error('Error al descargar:', error);
-                                                            alert('Error al descargar el archivo. El contenido puede estar corrupto.');
-                                                        }
-                                                    }}
-                                                    className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                                                    title="Descargar archivo"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                    </svg>
-                                                </button>
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                                        title="Descargar archivo"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                        </svg>
+                                                        <span className="text-sm">Descargar</span>
+                                                    </button>
+                                                </div>
                                             </li>
                                         ))}
                                     </ul>
@@ -1078,6 +1137,90 @@ const VerificarActividades: React.FC = () => {
                                 <h4 className="font-semibold text-gray-800 mb-2">Descripción</h4>
                                 <div className="bg-gray-50 rounded-xl p-4">
                                     <p className="text-gray-700 text-sm">{communitySeleccionada.description}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Archivos adjuntos */}
+                        {communitySeleccionada.attachments && communitySeleccionada.attachments.length > 0 && (
+                            <div className="mb-6">
+                                <h4 className="font-semibold text-gray-800 mb-2">Archivos Adjuntos</h4>
+                                <div className="bg-gray-50 rounded-xl p-4">
+                                    <ul className="space-y-3">
+                                        {communitySeleccionada.attachments.map((att) => (
+                                            <li key={att.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-2xl">
+                                                        {getIconoArchivo(att.mimeType)}
+                                                    </span>
+                                                    <div>
+                                                        <p className="font-medium text-gray-800 text-sm">{att.name}</p>
+                                                        <p className="text-gray-500 text-xs">{att.mimeType}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {puedePrevisualizar(att.mimeType) && (
+                                                        <button
+                                                            onClick={() => previsualizarArchivo(att)}
+                                                            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Ver archivo"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                            <span className="text-sm">Ver</span>
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => {
+                                                            try {
+                                                                // Verificar si hay contenido base64 válido
+                                                                if (!att.contentBase64 || att.contentBase64.includes('...')) {
+                                                                    alert('Este archivo de prueba no tiene contenido descargable');
+                                                                    return;
+                                                                }
+
+                                                                // Convertir base64 a blob
+                                                                const byteCharacters = atob(att.contentBase64);
+                                                                const byteNumbers = new Array(byteCharacters.length);
+                                                                for (let i = 0; i < byteCharacters.length; i++) {
+                                                                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                                                }
+                                                                const byteArray = new Uint8Array(byteNumbers);
+                                                                const blob = new Blob([byteArray], { type: att.mimeType });
+
+                                                                // Crear URL y descargar
+                                                                const url = window.URL.createObjectURL(blob);
+                                                                const link = document.createElement('a');
+                                                                link.href = url;
+                                                                link.download = att.name;
+                                                                link.style.display = 'none';
+                                                                document.body.appendChild(link);
+                                                                link.click();
+
+                                                                // Limpiar
+                                                                setTimeout(() => {
+                                                                    document.body.removeChild(link);
+                                                                    window.URL.revokeObjectURL(url);
+                                                                }, 100);
+                                                            } catch (error) {
+                                                                console.error('Error al descargar:', error);
+                                                                alert('Error al descargar el archivo. El contenido puede estar corrupto.');
+                                                            }
+                                                        }}
+                                                        className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                                        title="Descargar archivo"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                        </svg>
+                                                        <span className="text-sm">Descargar</span>
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
                         )}
@@ -1202,6 +1345,79 @@ const VerificarActividades: React.FC = () => {
                                 {actionLoading === procedureSeleccionado.id ? <span className="animate-spin">⏳</span> : null}
                                 Aprobar
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal de vista previa */}
+            {vistaPrevia && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]">
+                    <div className="relative w-full max-w-5xl h-[90vh] mx-4">
+                        {/* Header */}
+                        <div className="absolute top-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4 flex justify-between items-center rounded-t-xl">
+                            <span className="font-medium truncate">{vistaPrevia.name}</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        const link = document.createElement('a');
+                                        link.href = vistaPrevia.url;
+                                        link.download = vistaPrevia.name;
+                                        link.click();
+                                    }}
+                                    className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                                    title="Descargar"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={cerrarVistaPrevia}
+                                    className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                                    title="Cerrar"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="w-full h-full pt-16 bg-gray-900 rounded-xl overflow-hidden">
+                            {vistaPrevia.mimeType.includes('pdf') ? (
+                                <iframe
+                                    src={vistaPrevia.url}
+                                    className="w-full h-full"
+                                    title={vistaPrevia.name}
+                                />
+                            ) : vistaPrevia.mimeType.includes('image') ? (
+                                <div className="w-full h-full flex items-center justify-center p-4">
+                                    <img
+                                        src={vistaPrevia.url}
+                                        alt={vistaPrevia.name}
+                                        className="max-w-full max-h-full object-contain"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white">
+                                    <div className="text-center">
+                                        <div className="text-6xl mb-4">📎</div>
+                                        <p>Este tipo de archivo no se puede previsualizar</p>
+                                        <button
+                                            onClick={() => {
+                                                const link = document.createElement('a');
+                                                link.href = vistaPrevia.url;
+                                                link.download = vistaPrevia.name;
+                                                link.click();
+                                            }}
+                                            className="mt-4 px-6 py-2 bg-[#3FD0B6] rounded-lg hover:bg-[#2A9D8F] transition-colors"
+                                        >
+                                            Descargar archivo
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
