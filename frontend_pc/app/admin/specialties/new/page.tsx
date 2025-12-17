@@ -123,7 +123,7 @@ export default function AdminSpecialtyCreatePage() {
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
               Nombre de la Especialidad
             </label>
             <input
@@ -131,8 +131,8 @@ export default function AdminSpecialtyCreatePage() {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: Cardiología"
+              className="w-full px-4 py-3 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+              placeholder="Ej: Traumatología"
               required
             />
             {searchingSpecialties && (
@@ -142,7 +142,7 @@ export default function AdminSpecialtyCreatePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="startYear" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="startYear" className="block text-sm font-semibold text-gray-900 mb-2">
                 Año de Inicio
               </label>
               <input
@@ -150,12 +150,12 @@ export default function AdminSpecialtyCreatePage() {
                 id="startYear"
                 value={startYear}
                 onChange={(e) => setStartYear(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 required
               />
             </div>
             <div>
-              <label htmlFor="cohortCount" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cohortCount" className="block text-sm font-semibold text-gray-900 mb-2">
                 Cantidad de Cortes
               </label>
               <input
@@ -163,7 +163,7 @@ export default function AdminSpecialtyCreatePage() {
                 id="cohortCount"
                 value={cohortCount}
                 onChange={(e) => setCohortCount(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 min="1"
                 max="10"
                 required
