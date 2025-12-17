@@ -174,7 +174,7 @@ export default function CohortDetail() {
                                     onClick={() => router.back()}
                                     className="flex items-center text-gray-600 hover:text-gray-800 mb-2 transition-colors"
                                 >
-                                    <span className="mr-2">←</span> Volver a Cortes
+                                    <span className="mr-2">←</span> Volver a Cohortes
                                 </button>
                                 <h1 className="text-3xl font-bold text-gray-800">
                                     Cohorte {scholars[0]?.cohortYear || ''}

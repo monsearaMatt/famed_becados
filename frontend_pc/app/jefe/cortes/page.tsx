@@ -195,8 +195,8 @@ export default function Cortes() {
                     <div className="flex-1 p-6 flex flex-col">
                         {/* Header */}
                         <div className="text-center mb-6">
-                            <h1 className="text-2xl font-bold text-gray-800 mb-1">Cortes {specialty ? `- ${specialty.name}` : ''}</h1>
-                            <p className="text-gray-600 text-sm">Gestiona los cortes por año</p>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-1">Cohortes {specialty ? `- ${specialty.name}` : ''}</h1>
+                            <p className="text-gray-600 text-sm">Gestiona las cohortes por año</p>
                         </div>
 
                         {loading ? (
@@ -227,13 +227,13 @@ export default function Cortes() {
                                     </div>
                                 ))}
                                 
-                                {/* Botón para agregar nuevo corte con diseño mejorado */}
+                                {/* Botón para agregar nueva cohorte con diseño mejorado */}
                                 <button 
                                     onClick={abrirModal}
                                     className="bg-gradient-to-br from-white to-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-4 hover:border-[#3FD0B6] hover:bg-gray-50 transition-all duration-300 flex flex-col items-center justify-center min-h-[120px]"
                                 >
                                     <div className="text-2xl text-gray-400 mb-2">+</div>
-                                    <div className="text-gray-500 font-medium text-sm text-center">Agregar Nuevo Corte</div>
+                                    <div className="text-gray-500 font-medium text-sm text-center">Agregar Nueva Cohorte</div>
                                 </button>
                             </div>
                         )}
@@ -246,12 +246,12 @@ export default function Cortes() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                     <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 border-2 border-white/30 shadow-2xl">
                         <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                            Agregar Nuevo Corte
+                            Agregar Nueva Cohorte
                         </h3>
                         
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-medium mb-2">
-                                Año de Corte:
+                                Año de Cohorte:
                             </label>
                             <input
                                 type="text"
@@ -289,10 +289,10 @@ export default function Cortes() {
                         <div className="text-center mb-6">
                             <div className="text-5xl mb-4">📋</div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                                ¡Corte Creado!
+                                ¡Cohorte Creada!
                             </h3>
                             <p className="text-gray-600">
-                                ¿Desea copiar la configuración de procedimientos mínimos de otro corte?
+                                ¿Desea copiar la configuración de procedimientos mínimos de otra cohorte?
                             </p>
                         </div>
 
@@ -307,7 +307,7 @@ export default function Cortes() {
                                         onChange={(e) => setSelectedSourceCohort(e.target.value)}
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3FD0B6] text-gray-800"
                                     >
-                                        <option value="">Seleccione un corte...</option>
+                                        <option value="">Seleccione una cohorte...</option>
                                         {availableSourceCohorts.map((cohort) => (
                                             <option key={cohort.id} value={cohort.id}>
                                                 Cohorte {cohort.year}
@@ -335,7 +335,7 @@ export default function Cortes() {
                         ) : (
                             <div className="text-center">
                                 <p className="text-gray-500 mb-4">
-                                    No hay otros cortes con configuración disponible para copiar.
+                                    No hay otras cohortes con configuración disponible para copiar.
                                 </p>
                                 <button
                                     onClick={() => {

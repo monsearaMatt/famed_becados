@@ -35,7 +35,7 @@ const JefeDashboard: React.FC = () => {
                         <div className="text-center mb-12">
                             <h1 className="text-4xl font-bold text-gray-800 mb-4">Panel del Jefe de Beca</h1>
                             <p className="text-gray-600 text-lg max-w-2xl">
-                                Bienvenido al sistema de gestión de becarios. Gestiona rúbricas, verifica archivos y administra cortes.
+                                Bienvenido al sistema de gestión de becarios. Gestiona rúbricas, verifica archivos y administra cohortes.
                             </p>
                         </div>
 
@@ -82,7 +82,7 @@ const JefeDashboard: React.FC = () => {
                                 </div>
                             </button>
 
-                            {/* Botón Cortes */}
+                            {/* Botón Cohortes */}
                             <button 
                                 onClick={handleCortes}
                                 className="group bg-gradient-to-br from-white to-gray-50 rounded-2xl p-8 border-2 border-gray-200 hover:border-orange-500 hover:shadow-2xl transition-all duration-500 flex flex-col items-center justify-center h-64"
@@ -91,10 +91,10 @@ const JefeDashboard: React.FC = () => {
                                     <span className="text-white text-2xl">📅</span>
                                 </div>
                                 <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-orange-600 transition-colors duration-300">
-                                    Cortes
+                                    Cohortes
                                 </h3>
                                 <p className="text-gray-600 text-sm text-center">
-                                    Administra periodos de evaluación y cortes semestrales
+                                    Administra periodos de evaluación y cohortes anuales
                                 </p>
                                 <div className="mt-4 text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center">
                                     <span className="text-sm">Administrar</span>
