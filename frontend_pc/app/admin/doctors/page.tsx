@@ -117,23 +117,23 @@ export default function DoctorsPage() {
                     Volver al Dashboard
                 </button>
                 <h1 className="text-3xl font-bold text-gray-900">Asignaciones de Doctores</h1>
-                <p className="text-gray-600 mt-2">Configura qué especialidades y cohortes puede evaluar cada doctor</p>
+                <p className="text-gray-700 mt-2">Configura qué especialidades y cohortes puede evaluar cada doctor</p>
             </div>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Doctor
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 RUT
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Especialidad Primaria
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                 Acciones
                             </th>
                         </tr>
@@ -141,7 +141,7 @@ export default function DoctorsPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {doctors.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={4} className="px-6 py-12 text-center text-gray-700">
                                     No hay doctores registrados en el sistema
                                 </td>
                             </tr>
@@ -161,14 +161,14 @@ export default function DoctorsPage() {
                                             )}
                                             <div>
                                                 <div className="text-sm font-medium text-gray-900">{doctor.fullName}</div>
-                                                <div className="text-sm text-gray-500">{doctor.email || '-'}</div>
+                                                <div className="text-sm text-gray-700">{doctor.email || '-'}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                                         {doctor.rut}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                                         {doctor.specialty || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -212,11 +212,11 @@ export default function DoctorsPage() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span className="ml-2 text-gray-600">Cargando...</span>
+                                <span className="ml-2 text-gray-800">Cargando...</span>
                             </div>
                         ) : (
                             <>
-                                <div className="mb-4 text-sm text-gray-600">
+                                <div className="mb-4 text-sm text-gray-800">
                                     Selecciona las especialidades que este doctor puede evaluar
                                 </div>
                                 <div className="space-y-2 mb-6">
@@ -241,7 +241,7 @@ export default function DoctorsPage() {
                                     ))}
                                 </div>
 
-                                <div className="text-sm text-gray-500 mb-4">
+                                <div className="text-sm text-gray-800 mb-4 font-medium">
                                     {selectedSpecialties.length} de {specialties.length} especialidades seleccionadas
                                 </div>
                             </>

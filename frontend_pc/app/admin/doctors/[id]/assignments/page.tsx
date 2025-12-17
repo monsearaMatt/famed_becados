@@ -206,7 +206,7 @@ export default function DoctorAssignmentsPage() {
                     )}
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">{doctor.fullName}</h1>
-                        <p className="text-gray-600">Configurar Asignaciones de Especialidades y Cohortes</p>
+                        <p className="text-gray-800">Configurar Asignaciones de Especialidades y Cohortes</p>
                     </div>
                 </div>
             </div>
@@ -218,7 +218,7 @@ export default function DoctorAssignmentsPage() {
                         <h3 className="text-xl font-semibold text-yellow-900 mb-2">
                             Sin Especialidades Asignadas
                         </h3>
-                        <p className="text-yellow-700 mb-4">
+                        <p className="text-yellow-800 mb-4">
                             Este doctor no tiene especialidades asignadas todavía.
                             Debes asignar especialidades primero para poder configurar los cohortes.
                         </p>
@@ -244,7 +244,7 @@ export default function DoctorAssignmentsPage() {
                                                 <span className="mr-3">🎓</span>
                                                 {specialty.name} {specialty.startYear && `(${specialty.startYear})`}
                                             </h3>
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <p className="text-sm text-gray-700 mt-1 font-medium">
                                                 {assignedCount} de {totalCount} cohorte{totalCount !== 1 ? 's' : ''} asignado{assignedCount !== 1 ? 's' : ''}
                                             </p>
                                         </div>
@@ -255,10 +255,10 @@ export default function DoctorAssignmentsPage() {
                                             >
                                                 Seleccionar todos
                                             </button>
-                                            <span className="text-gray-300">|</span>
+                                            <span className="text-gray-400">|</span>
                                             <button
                                                 onClick={() => handleDeselectAll(specialty.id)}
-                                                className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                                                className="text-sm text-gray-800 hover:text-gray-900 font-medium"
                                             >
                                                 Deseleccionar todos
                                             </button>
@@ -268,7 +268,7 @@ export default function DoctorAssignmentsPage() {
 
                                 <div className="p-6">
                                     {specialty.cohorts.length === 0 ? (
-                                        <p className="text-gray-500 text-center py-4">
+                                        <p className="text-gray-700 text-center py-4 font-medium">
                                             No hay cohortes disponibles para esta especialidad
                                         </p>
                                     ) : (

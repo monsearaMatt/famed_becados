@@ -63,7 +63,7 @@ export default function AdminSpecialtiesPage() {
                                         <span className="text-2xl">🏥</span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="block text-gray-400 text-xs">ID: {spec.id.slice(-4)}</span>
+                                        <span className="block text-gray-600 text-xs font-medium">ID: {spec.id.slice(-4)}</span>
                                         {spec.startYear && (
                                             <span className="block text-[#2A9D8F] font-bold text-sm mt-1">
                                                 {spec.startYear}
@@ -76,7 +76,7 @@ export default function AdminSpecialtiesPage() {
                                     {spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}
                                 </h3>
                                 
-                                <div className="flex items-center text-gray-500 text-sm">
+                                <div className="flex items-center text-gray-700 text-sm font-medium">
                                     <span>Ver detalles y participantes →</span>
                                 </div>
                             </div>

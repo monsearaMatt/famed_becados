@@ -230,7 +230,7 @@ export default function Integrantes() {
                     <div className="flex-1 p-6 flex flex-col">
                         <div className="text-center mb-6">
                             <h1 className="text-2xl font-bold text-gray-800 mb-1">Gestión de Integrantes</h1>
-                            <p className="text-gray-600 text-sm">Administra los miembros del equipo</p>
+                            <p className="text-gray-800 text-sm font-medium">Administra los miembros del equipo</p>
                         </div>
 
                         <div className="flex justify-between items-center mb-6">
@@ -285,7 +285,7 @@ export default function Integrantes() {
                                             <span className="font-medium text-gray-800">{integrante.fullName}</span>
                                         </div>
                                         <div className="w-1/4">
-                                            <span className="text-gray-600 text-sm">
+                                            <span className="text-gray-800 text-sm font-medium">
                                                 {integrante.email || 'Sin email'}
                                             </span>
                                         </div>
@@ -313,7 +313,7 @@ export default function Integrantes() {
                                                     e.stopPropagation();
                                                     toggleMenu(integrante.id);
                                                 }}
-                                                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 font-bold text-xl"
+                                                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-700 font-bold text-xl"
                                             >
                                                 ⋮
                                             </button>
@@ -327,14 +327,14 @@ export default function Integrantes() {
                                                     <div className="py-1">
                                                         <button
                                                             onClick={() => handleViewProfile(integrante)}
-                                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#3FD0B6] flex items-center space-x-2"
+                                                            className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 hover:text-[#3FD0B6] flex items-center space-x-2 font-medium"
                                                         >
                                                             <span>👁️</span>
                                                             <span>Ver Perfil</span>
                                                         </button>
                                                         <button
                                                             onClick={() => handleEditProfile(integrante)}
-                                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 flex items-center space-x-2"
+                                                            className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 hover:text-blue-600 flex items-center space-x-2 font-medium"
                                                         >
                                                             <span>✏️</span>
                                                             <span>Editar Perfil</span>
@@ -343,7 +343,7 @@ export default function Integrantes() {
                                                         {integrante.role === 'becado' && (
                                                             <button
                                                                 onClick={() => openStatusModal(integrante)}
-                                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-purple-600 flex items-center space-x-2"
+                                                                className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 hover:text-purple-600 flex items-center space-x-2 font-medium"
                                                             >
                                                                 <span>⚙️</span>
                                                                 <span>Gestionar Estado</span>

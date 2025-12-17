@@ -9,7 +9,7 @@ export default function AgregarIntegranteButton({ onAgregar }: AgregarIntegrante
     return (
         <button 
             onClick={onAgregar}
-            className="mt-4 border border-gray-400 rounded-md py-2 px-4 w-fit text-gray-500 hover:bg-gray-50 transition-colors"
+            className="mt-4 border-2 border-gray-500 rounded-md py-2 px-4 w-fit text-gray-800 font-medium hover:bg-gray-50 hover:border-gray-700 transition-colors"
         >
             + Agregar Integrante
         </button>
