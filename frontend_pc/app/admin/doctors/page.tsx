@@ -46,14 +46,10 @@ export default function DoctorsPage() {
             setSpecialties(allSpecs);
 
             // Load doctor's assigned specialties from DoctorSpecialtyAssignment
+            // Note: We no longer add doctor.specialtyId (legacy field) here since
+            // DoctorSpecialtyAssignment is now the single source of truth
             const assigned = await doctorSpecialtyService.getAssignedSpecialties(doctor.id);
             const assignedIds = assigned.map(a => a.specialtyId);
-
-            // IMPORTANT: Also include doctor's primary specialtyId if set
-            // This handles doctors created from specialty pages
-            if (doctor.specialtyId && !assignedIds.includes(doctor.specialtyId)) {
-                assignedIds.push(doctor.specialtyId);
-            }
 
             setSelectedSpecialties(assignedIds);
         } catch (error) {

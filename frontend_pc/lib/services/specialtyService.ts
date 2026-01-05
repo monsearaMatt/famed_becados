@@ -4,23 +4,23 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // Helper para manejar respuestas con posible token expirado
 function handleTokenExpired() {
-  if (typeof window !== 'undefined') {
-    const handler = (window as any).__handleTokenExpired;
-    if (handler) {
-      handler();
-    } else {
-      // Fallback
-      authService.clearAuth();
-      window.location.href = '/login';
+    if (typeof window !== 'undefined') {
+        const handler = (window as any).__handleTokenExpired;
+        if (handler) {
+            handler();
+        } else {
+            // Fallback
+            authService.clearAuth();
+            window.location.href = '/login';
+        }
     }
-  }
 }
 
 async function checkAuthResponse(response: Response): Promise<void> {
-  if (response.status === 401) {
-    handleTokenExpired();
-    throw new Error('Sesión expirada');
-  }
+    if (response.status === 401) {
+        handleTokenExpired();
+        throw new Error('Sesión expirada');
+    }
 }
 
 export interface Specialty {
@@ -240,6 +240,50 @@ export const specialtyService = {
         }
 
         return data.specialty;
+    },
+
+    async updateSpecialty(specialtyId: string, name: string): Promise<Specialty> {
+        const token = authService.getToken();
+        const response = await fetch(`${API_URL}/becado/specialties/${specialtyId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name }),
+        });
+
+        await checkAuthResponse(response);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Error al actualizar especialidad');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Error al actualizar especialidad');
+        }
+
+        return data.specialty;
+    },
+
+    async deleteSpecialty(specialtyId: string): Promise<void> {
+        const token = authService.getToken();
+        const response = await fetch(`${API_URL}/becado/specialties/${specialtyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        await checkAuthResponse(response);
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Error al eliminar especialidad');
+        }
     },
 
     async getCohorts(specialtyId: string): Promise<Cohort[]> {
@@ -506,7 +550,7 @@ export const specialtyService = {
         if (cohortId) {
             url += `?cohortId=${cohortId}`;
         }
-        
+
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -675,7 +719,7 @@ export const specialtyService = {
         const token = authService.getToken();
         // Normalize RUT: remove dots, dashes, and spaces for consistent lookup
         const normalizedRut = rut.replace(/\./g, '').replace(/-/g, '').replace(/\s/g, '').toUpperCase();
-        
+
         const response = await fetch(`${API_URL}/evaluaciones/students/${encodeURIComponent(normalizedRut)}/evaluations`, {
             headers: {
                 'Authorization': `Bearer ${token}`,

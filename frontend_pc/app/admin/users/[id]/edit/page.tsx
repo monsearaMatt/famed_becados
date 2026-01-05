@@ -4,6 +4,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { profileService, ProfileUser } from "@/lib/services/profileService";
 import { specialtyService, Specialty, JefeEspecialidadData } from "@/lib/services/specialtyService";
+import { doctorSpecialtyService } from "@/lib/services/doctorSpecialtyService";
 
 export default function EditUserPage() {
     const router = useRouter();
@@ -19,11 +20,16 @@ export default function EditUserPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     // Jefe specialties management
     const [jefeAssignedSpecialties, setJefeAssignedSpecialties] = useState<JefeEspecialidadData[]>([]);
     const [selectedSpecialtyToAdd, setSelectedSpecialtyToAdd] = useState<string>("");
     const [addingSpecialty, setAddingSpecialty] = useState(false);
+
+    // Doctor specialties management
+    const [doctorAssignedSpecialties, setDoctorAssignedSpecialties] = useState<{ id: string; specialtyId: string; name: string; startYear?: number }[]>([]);
+    const [selectedDoctorSpecialtyToAdd, setSelectedDoctorSpecialtyToAdd] = useState<string>("");
+    const [addingDoctorSpecialty, setAddingDoctorSpecialty] = useState(false);
 
     // Form states
     const [formData, setFormData] = useState({
@@ -60,7 +66,7 @@ export default function EditUserPage() {
                     profileService.getProfileByUserId(userId, userRole),
                     specialtyService.getSpecialties()
                 ]);
-                
+
                 setUser(userData);
                 setSpecialties(specialtiesData);
 
@@ -78,14 +84,14 @@ export default function EditUserPage() {
                 // Set initial year from user data
                 const userYear = (userData as any).scholarshipStartYear || currentYear.toString();
                 setSelectedYear(userYear);
-                
+
                 // Get specialtyId directly from userData if available, otherwise find by name
                 let userSpecialtyId = (userData as any).specialtyId || "";
                 if (!userSpecialtyId && userData.specialty) {
                     const userSpecialty = specialtiesData.find(s => s.name === userData.specialty);
                     userSpecialtyId = userSpecialty?.id || "";
                 }
-                
+
                 setFormData({
                     fullName: userData.fullName || "",
                     email: userData.email || "",
@@ -99,11 +105,32 @@ export default function EditUserPage() {
                 // Convert bytes to MB for display
                 const quotaInBytes = userData.storageQuota || 52428800;
                 setQuota(parseFloat((quotaInBytes / (1024 * 1024)).toFixed(2)));
-                
+
                 // Load jefe assigned specialties if role is jefe_especialidad
                 if (userRole === 'jefe_especialidad') {
                     const jefeSpecialties = await specialtyService.getSpecialtiesByJefeUserId(userId);
                     setJefeAssignedSpecialties(jefeSpecialties);
+                }
+
+                // Load doctor assigned specialties if role is doctor
+                if (userRole === 'doctor') {
+                    try {
+                        // Use userData.id (profile ID) not userId (auth ID from URL)
+                        const doctorProfileId = userData.id;
+                        const assignments = await doctorSpecialtyService.getAssignedSpecialties(doctorProfileId);
+                        const assignedSpecs = assignments.map(a => {
+                            const spec = specialtiesData.find(s => s.id === a.specialtyId);
+                            return {
+                                id: a.id,
+                                specialtyId: a.specialtyId,
+                                name: spec?.name || 'Desconocida',
+                                startYear: spec?.startYear
+                            };
+                        });
+                        setDoctorAssignedSpecialties(assignedSpecs);
+                    } catch (err) {
+                        console.error('Error loading doctor specialties:', err);
+                    }
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Error al cargar datos');
@@ -126,8 +153,8 @@ export default function EditUserPage() {
         const year = e.target.value;
         setSelectedYear(year);
         // Reset specialty and update scholarshipStartYear
-        setFormData(prev => ({ 
-            ...prev, 
+        setFormData(prev => ({
+            ...prev,
             scholarshipStartYear: year,
             specialty: "",
             specialtyId: ""
@@ -157,6 +184,11 @@ export default function EditUserPage() {
         s => !jefeAssignedSpecialties.some(assigned => assigned.specialtyId === s.id)
     );
 
+    // For doctor: filter out already assigned specialties
+    const availableSpecialtiesForDoctor = specialties.filter(
+        s => !doctorAssignedSpecialties.some(assigned => assigned.specialtyId === s.id)
+    );
+
     const handleAddJefeSpecialty = async () => {
         if (!selectedSpecialtyToAdd) return;
         setAddingSpecialty(true);
@@ -180,6 +212,55 @@ export default function EditUserPage() {
             // Refresh assigned specialties
             const updated = await specialtyService.getSpecialtiesByJefeUserId(userId);
             setJefeAssignedSpecialties(updated);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Error al remover especialidad");
+        }
+    };
+
+    // Doctor specialty handlers
+    const handleAddDoctorSpecialty = async () => {
+        if (!selectedDoctorSpecialtyToAdd || !user) return;
+        setAddingDoctorSpecialty(true);
+        try {
+            // Use user.id (profile ID in becado-service) not userId (auth ID from URL)
+            await doctorSpecialtyService.assignSpecialty(user.id, selectedDoctorSpecialtyToAdd);
+            // Refresh assigned specialties
+            const assignments = await doctorSpecialtyService.getAssignedSpecialties(user.id);
+            const assignedSpecs = assignments.map(a => {
+                const spec = specialties.find(s => s.id === a.specialtyId);
+                return {
+                    id: a.id,
+                    specialtyId: a.specialtyId,
+                    name: spec?.name || 'Desconocida',
+                    startYear: spec?.startYear
+                };
+            });
+            setDoctorAssignedSpecialties(assignedSpecs);
+            setSelectedDoctorSpecialtyToAdd("");
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Error al asignar especialidad");
+        } finally {
+            setAddingDoctorSpecialty(false);
+        }
+    };
+
+    const handleRemoveDoctorSpecialty = async (specialtyId: string) => {
+        if (!confirm("¿Estás seguro de remover esta especialidad?") || !user) return;
+        try {
+            // Use user.id (profile ID in becado-service) not userId (auth ID from URL)
+            await doctorSpecialtyService.removeSpecialty(user.id, specialtyId);
+            // Refresh assigned specialties
+            const assignments = await doctorSpecialtyService.getAssignedSpecialties(user.id);
+            const assignedSpecs = assignments.map(a => {
+                const spec = specialties.find(s => s.id === a.specialtyId);
+                return {
+                    id: a.id,
+                    specialtyId: a.specialtyId,
+                    name: spec?.name || 'Desconocida',
+                    startYear: spec?.startYear
+                };
+            });
+            setDoctorAssignedSpecialties(assignedSpecs);
         } catch (err) {
             alert(err instanceof Error ? err.message : "Error al remover especialidad");
         }
@@ -271,7 +352,7 @@ export default function EditUserPage() {
 
             <div className="flex-1 flex items-center justify-center p-4">
                 <div className="bg-white shadow-2xl w-full max-w-4xl border-2 border-white/30 rounded-3xl overflow-hidden p-8">
-                    
+
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-800">Editar Perfil: {user.fullName}</h1>
                         <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-600 uppercase">
@@ -283,7 +364,7 @@ export default function EditUserPage() {
                         {/* Personal Information */}
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Información Personal</h3>
-                            
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
                                 <input
@@ -327,7 +408,7 @@ export default function EditUserPage() {
                             {(user.role === 'admin' || user.role === 'admin_readonly') && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                     <p className="text-blue-700 text-sm">
-                                        💡 Los administradores solo tienen nombre y contraseña. 
+                                        💡 Los administradores solo tienen nombre y contraseña.
                                         No requieren información de contacto ni académica.
                                     </p>
                                 </div>
@@ -336,129 +417,189 @@ export default function EditUserPage() {
 
                         {/* Academic / Professional Info - Solo para roles no-admin */}
                         {user.role !== 'admin' && user.role !== 'admin_readonly' && (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Información Académica</h3>
-                            
-                            {/* For Jefe de Especialidad: Multi-specialty management */}
-                            {user.role === 'jefe_especialidad' ? (
-                                <div className="space-y-4">
-                                    <label className="block text-sm font-medium text-gray-700">Especialidades a Cargo</label>
-                                    
-                                    {/* Assigned specialties with remove button */}
-                                    <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                        {jefeAssignedSpecialties.length === 0 ? (
-                                            <span className="text-gray-400 text-sm">Sin especialidades asignadas</span>
-                                        ) : (
-                                            jefeAssignedSpecialties.map((spec) => (
-                                                <div 
-                                                    key={spec.id} 
-                                                    className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 border border-purple-200"
-                                                >
-                                                    <span>{spec.specialtyName}</span>
-                                                    {spec.startYear && (
-                                                        <span className="bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded text-xs">
-                                                            {spec.startYear}
-                                                        </span>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveJefeSpecialty(spec.specialtyId)}
-                                                        className="ml-1 text-purple-600 hover:text-red-600 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
-                                                        title="Remover especialidad"
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Información Académica</h3>
+
+                                {/* For Jefe de Especialidad: Multi-specialty management */}
+                                {user.role === 'jefe_especialidad' ? (
+                                    <div className="space-y-4">
+                                        <label className="block text-sm font-medium text-gray-700">Especialidades a Cargo</label>
+
+                                        {/* Assigned specialties with remove button */}
+                                        <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            {jefeAssignedSpecialties.length === 0 ? (
+                                                <span className="text-gray-400 text-sm">Sin especialidades asignadas</span>
+                                            ) : (
+                                                jefeAssignedSpecialties.map((spec) => (
+                                                    <div
+                                                        key={spec.id}
+                                                        className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 border border-purple-200"
                                                     >
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                    
-                                    {/* Add new specialty */}
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={selectedSpecialtyToAdd}
-                                            onChange={(e) => setSelectedSpecialtyToAdd(e.target.value)}
-                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
-                                        >
-                                            <option value="">Agregar especialidad...</option>
-                                            {availableSpecialtiesForJefe.map(spec => (
-                                                <option key={spec.id} value={spec.id}>
-                                                    {spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            onClick={handleAddJefeSpecialty}
-                                            disabled={!selectedSpecialtyToAdd || addingSpecialty}
-                                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                                        >
-                                            {addingSpecialty ? '...' : '+ Agregar'}
-                                        </button>
-                                    </div>
-                                    <p className="text-xs text-gray-500">Puede asignar múltiples especialidades a este jefe.</p>
-                                </div>
-                            ) : (
-                                <>
-                                    {user.role === 'becado' && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Año de Ingreso</label>
+                                                        <span>{spec.specialtyName}</span>
+                                                        {spec.startYear && (
+                                                            <span className="bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded text-xs">
+                                                                {spec.startYear}
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveJefeSpecialty(spec.specialtyId)}
+                                                            className="ml-1 text-purple-600 hover:text-red-600 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
+                                                            title="Remover especialidad"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+
+                                        {/* Add new specialty */}
+                                        <div className="flex gap-2">
                                             <select
-                                                value={selectedYear}
-                                                onChange={handleYearChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white"
+                                                value={selectedSpecialtyToAdd}
+                                                onChange={(e) => setSelectedSpecialtyToAdd(e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
                                             >
-                                                {availableYears.map(year => (
-                                                    <option key={year} value={year}>{year}</option>
+                                                <option value="">Agregar especialidad...</option>
+                                                {availableSpecialtiesForJefe.map(spec => (
+                                                    <option key={spec.id} value={spec.id}>
+                                                        {spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}
+                                                    </option>
                                                 ))}
                                             </select>
-                                            <p className="text-xs text-gray-500 mt-1">Seleccione el año para ver las especialidades disponibles.</p>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddJefeSpecialty}
+                                                disabled={!selectedSpecialtyToAdd || addingSpecialty}
+                                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                                            >
+                                                {addingSpecialty ? '...' : '+ Agregar'}
+                                            </button>
                                         </div>
-                                    )}
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
-                                        <select
-                                            value={formData.specialtyId}
-                                            onChange={handleSpecialtyChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white"
-                                        >
-                                            <option value="">Seleccionar Especialidad</option>
-                                            {filteredSpecialties.map(spec => (
-                                                <option key={spec.id} value={spec.id}>{spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}</option>
-                                            ))}
-                                        </select>
+                                        <p className="text-xs text-gray-500">Puede asignar múltiples especialidades a este jefe.</p>
                                     </div>
+                                ) : user.role === 'doctor' ? (
+                                    /* Doctor multi-specialty management */
+                                    <div className="space-y-4">
+                                        <label className="block text-sm font-medium text-gray-700">Especialidades Asignadas</label>
 
-                                    {user.role === 'becado' && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Hospital</label>
-                                            <input
-                                                type="text"
-                                                name="hospital"
-                                                value={formData.hospital}
-                                                onChange={handleChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white"
-                                            />
+                                        {/* Assigned specialties with remove button */}
+                                        <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            {doctorAssignedSpecialties.length === 0 ? (
+                                                <span className="text-gray-400 text-sm">Sin especialidades asignadas</span>
+                                            ) : (
+                                                doctorAssignedSpecialties.map((spec) => (
+                                                    <div
+                                                        key={spec.id}
+                                                        className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 border border-blue-200"
+                                                    >
+                                                        <span>{spec.name}</span>
+                                                        {spec.startYear && (
+                                                            <span className="bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded text-xs">
+                                                                {spec.startYear}
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveDoctorSpecialty(spec.specialtyId)}
+                                                            className="ml-1 text-blue-600 hover:text-red-600 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
+                                                            title="Remover especialidad"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
+
+                                        {/* Add new specialty */}
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={selectedDoctorSpecialtyToAdd}
+                                                onChange={(e) => setSelectedDoctorSpecialtyToAdd(e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                                            >
+                                                <option value="">Agregar especialidad...</option>
+                                                {availableSpecialtiesForDoctor.map(spec => (
+                                                    <option key={spec.id} value={spec.id}>
+                                                        {spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddDoctorSpecialty}
+                                                disabled={!selectedDoctorSpecialtyToAdd || addingDoctorSpecialty}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                                            >
+                                                {addingDoctorSpecialty ? '...' : '+ Agregar'}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500">Puede asignar múltiples especialidades a este doctor.</p>
+                                    </div>
+                                ) : (
+                                    /* Becado single specialty */
+                                    <>
+                                        {user.role === 'becado' && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Año de Ingreso</label>
+                                                <select
+                                                    value={selectedYear}
+                                                    onChange={handleYearChange}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white"
+                                                >
+                                                    {availableYears.map(year => (
+                                                        <option key={year} value={year}>{year}</option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-xs text-gray-500 mt-1">Seleccione el año para ver las especialidades disponibles.</p>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+                                            <select
+                                                value={formData.specialtyId}
+                                                onChange={handleSpecialtyChange}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white"
+                                            >
+                                                <option value="">Seleccionar Especialidad</option>
+                                                {filteredSpecialties.map(spec => (
+                                                    <option key={spec.id} value={spec.id}>{spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {user.role === 'becado' && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Hospital</label>
+                                                <input
+                                                    type="text"
+                                                    name="hospital"
+                                                    value={formData.hospital}
+                                                    onChange={handleChange}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white"
+                                                />
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         )}
 
                         {/* Security & Quota */}
-                        <div className={`space-y-4 ${user.role === 'admin' || user.role === 'admin_readonly' ? '' : 'md:col-span-2'}`}>
+                        <div className={`space-y-4 ${user.role === 'admin' || user.role === 'admin_readonly' ? 'md:col-span-2' : 'md:col-span-2'}`}>
                             <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Seguridad</h3>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            <div className={`grid gap-6 ${user.role === 'admin' || user.role === 'admin_readonly' ? 'grid-cols-1 max-w-md' : 'grid-cols-1 md:grid-cols-2'}`}>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña</label>
                                     <div className="flex items-center space-x-2">
                                         <div className="relative flex-1">
                                             <input
                                                 type={showPassword ? "text" : "password"}
-                                                placeholder="Dejar en blanco para mantener actual"
+                                                placeholder="Dejar en blanco para mantener"
                                                 value={newPassword}
                                                 onChange={(e) => setNewPassword(e.target.value)}
                                                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3FD0B6] focus:border-transparent text-gray-900 bg-white placeholder-gray-400"

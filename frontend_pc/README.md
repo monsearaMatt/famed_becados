@@ -99,7 +99,42 @@ export default function SoloAdmin() {
 
 ## Docker
 
-Para ejecutar con Docker:
+### Despliegue con Docker Compose (Recomendado)
+
+```bash
+# Primera vez o después de cambios en el código
+docker-compose up -d --build
+
+# Ver logs
+docker-compose logs -f
+
+# Detener
+docker-compose down
+```
+
+### Rebuild sin caché
+
+Si los cambios no se reflejan correctamente, fuerza un rebuild completo:
+
+```bash
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### ¿Cuándo usar `--no-cache`?
+
+Docker utiliza un sistema de capas para optimizar builds. Cuando ejecutas `docker-compose build`, Docker reutiliza capas cacheadas si detecta que los archivos no han cambiado. Sin embargo, hay casos donde el caché puede causar problemas:
+
+| Situación | ¿Usar `--no-cache`? |
+|-----------|---------------------|
+| Actualizaste `package.json` | ✅ Sí |
+| Cambiaste variables de entorno de build (`NEXT_PUBLIC_*`) | ✅ Sí |
+| Modificaste el Dockerfile | ✅ Sí |
+| Solo cambiaste código fuente | ❌ No necesario |
+
+> **Nota:** El flag `--build` reconstruye la imagen si detecta cambios, pero puede usar capas cacheadas. El flag `--no-cache` ignora todo el caché y reconstruye desde cero.
+
+### Build manual (alternativa)
 
 ```bash
 docker build -t famed-frontend .

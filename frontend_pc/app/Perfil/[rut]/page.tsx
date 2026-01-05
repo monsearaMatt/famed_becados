@@ -5,7 +5,8 @@ import Navbar from "@/components/Navbar";
 import { userService, User } from "@/lib/services/userService";
 import { evaluationService, Evaluation } from "@/lib/services/evaluationService";
 import { profileService, ProfileUser } from "@/lib/services/profileService";
-import { specialtyService, JefeEspecialidadData } from "@/lib/services/specialtyService";
+import { specialtyService, Specialty, JefeEspecialidadData } from "@/lib/services/specialtyService";
+import { doctorSpecialtyService } from "@/lib/services/doctorSpecialtyService";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function PerfilUsuario() {
@@ -15,10 +16,11 @@ export default function PerfilUsuario() {
     const [usuario, setUsuario] = useState<User | null>(null);
     const [scholarProfile, setScholarProfile] = useState<ProfileUser | null>(null);
     const [jefeSpecialties, setJefeSpecialties] = useState<JefeEspecialidadData[]>([]);
+    const [doctorSpecialties, setDoctorSpecialties] = useState<{ id: string; name: string; startYear?: number }[]>([]);
     const [evaluaciones, setEvaluaciones] = useState<Evaluation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
     // Quota management state
     const [isEditingQuota, setIsEditingQuota] = useState(false);
     const [newQuota, setNewQuota] = useState<string>("");
@@ -30,7 +32,7 @@ export default function PerfilUsuario() {
             try {
                 const data = await userService.getByRut(rut);
                 setUsuario(data);
-                
+
                 // If user is becado, fetch detailed profile for quota info
                 if (data.role === 'becado') {
                     // We need the userId from the user data to fetch the profile
@@ -39,11 +41,33 @@ export default function PerfilUsuario() {
                         setScholarProfile(profile);
                     }
                 }
-                
+
                 // If user is jefe_especialidad, fetch their assigned specialties
                 if (data.role === 'jefe_especialidad' && data.id) {
                     const specialties = await specialtyService.getSpecialtiesByJefeUserId(data.id);
                     setJefeSpecialties(specialties);
+                }
+
+                // If user is doctor, fetch their assigned specialties
+                if (data.role === 'doctor' && data.id) {
+                    try {
+                        // First get the doctor profile to get the correct doctorId
+                        const doctorProfile = await profileService.getProfileByUserId(data.id, 'doctor');
+                        const allSpecialties = await specialtyService.getSpecialties();
+                        // Use doctorProfile.id (profileId in becado-service) not data.id (userId in auth-service)
+                        const assignments = await doctorSpecialtyService.getAssignedSpecialties(doctorProfile.id);
+                        const assignedSpecs = assignments.map(a => {
+                            const spec = allSpecialties.find(s => s.id === a.specialtyId);
+                            return {
+                                id: a.specialtyId,
+                                name: spec?.name || 'Desconocida',
+                                startYear: spec?.startYear
+                            };
+                        });
+                        setDoctorSpecialties(assignedSpecs);
+                    } catch (err) {
+                        console.error('Error fetching doctor specialties:', err);
+                    }
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Error al cargar usuario');
@@ -76,7 +100,7 @@ export default function PerfilUsuario() {
 
     const handleUpdateQuota = async () => {
         if (!scholarProfile || !usuario) return;
-        
+
         try {
             const quotaValue = parseFloat(newQuota);
             if (isNaN(quotaValue) || quotaValue < 0) {
@@ -92,10 +116,10 @@ export default function PerfilUsuario() {
             }
 
             const quotaInBytes = Math.floor(quotaValue * multiplier);
-            
+
             // We need the userId. If scholarProfile has userId, use it.
             await profileService.updateStorageQuota(scholarProfile.userId, quotaInBytes);
-            
+
             // Refresh profile
             const updatedProfile = await profileService.getProfileByUserId(scholarProfile.userId);
             setScholarProfile(updatedProfile);
@@ -134,14 +158,14 @@ export default function PerfilUsuario() {
 
     return (
         <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
-            
+
             <Navbar title="Perfil de Usuario" subtitle="Detalle" />
 
             {/* Contenedor principal */}
             <div className="flex-1 flex items-center justify-center p-8">
                 <div className="bg-white shadow-2xl w-full max-w-4xl border-2 border-white/30 flex rounded-3xl overflow-hidden">
-                    
-                    
+
+
                     <div className="w-1/3 bg-gradient-to-b from-[#3FD0B6] to-[#2A9D8F] p-8 flex flex-col items-center justify-center rounded-l-3xl">
                         <div className="text-center">
                             <div className="w-28 h-28 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white/30 backdrop-blur-sm">
@@ -154,7 +178,7 @@ export default function PerfilUsuario() {
                         </div>
                     </div>
 
-                    
+
                     <div className="flex-1 p-8 flex flex-col">
                         {/* Header del perfil */}
                         <div className="text-center mb-8">
@@ -171,7 +195,7 @@ export default function PerfilUsuario() {
                                     </div>
                                     <h3 className="text-xl font-semibold text-gray-800">Información Personal</h3>
                                 </div>
-                                
+
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-gray-700 text-sm font-medium mb-1">
@@ -199,7 +223,7 @@ export default function PerfilUsuario() {
                                             {usuario.role}
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <label className="block text-gray-700 text-sm font-medium mb-1">
                                             Fecha de Registro
@@ -211,6 +235,41 @@ export default function PerfilUsuario() {
                                 </div>
                             </div>
 
+                            {/* Especialidades Asignadas (Solo para Doctores) */}
+                            {usuario.role === 'doctor' && (
+                                <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-200 shadow-sm">
+                                    <div className="flex items-center space-x-3 mb-6">
+                                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <span className="text-blue-600 text-xl">🩺</span>
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-800">Especialidades Asignadas</h3>
+                                    </div>
+
+                                    {doctorSpecialties.length === 0 ? (
+                                        <div className="text-center py-4 text-gray-500">
+                                            No tiene especialidades asignadas.
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {doctorSpecialties.map((spec) => (
+                                                <div
+                                                    key={spec.id}
+                                                    className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 rounded-xl font-medium text-sm flex items-center"
+                                                >
+                                                    <span className="mr-2">🏥</span>
+                                                    {spec.name}
+                                                    {spec.startYear && (
+                                                        <span className="ml-2 bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full text-xs">
+                                                            {spec.startYear}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Especialidades Asignadas (Solo para Jefes de Especialidad) */}
                             {usuario.role === 'jefe_especialidad' && (
                                 <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -220,7 +279,7 @@ export default function PerfilUsuario() {
                                         </div>
                                         <h3 className="text-xl font-semibold text-gray-800">Especialidades a Cargo</h3>
                                     </div>
-                                    
+
                                     {jefeSpecialties.length === 0 ? (
                                         <div className="text-center py-4 text-gray-500">
                                             No tiene especialidades asignadas.
@@ -228,8 +287,8 @@ export default function PerfilUsuario() {
                                     ) : (
                                         <div className="flex flex-wrap gap-2">
                                             {jefeSpecialties.map((spec) => (
-                                                <div 
-                                                    key={spec.id} 
+                                                <div
+                                                    key={spec.id}
                                                     className="bg-purple-50 border border-purple-200 text-purple-800 px-4 py-2 rounded-xl font-medium text-sm flex items-center"
                                                 >
                                                     <span className="mr-2">🏥</span>
@@ -255,7 +314,7 @@ export default function PerfilUsuario() {
                                         </div>
                                         <h3 className="text-xl font-semibold text-gray-800">Información Académica</h3>
                                     </div>
-                                    
+
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-gray-700 text-sm font-medium mb-1">
@@ -315,7 +374,7 @@ export default function PerfilUsuario() {
                                                 Almacenamiento de Evidencia
                                             </label>
                                             {currentUser?.rol === 'admin' && (
-                                                <button 
+                                                <button
                                                     onClick={() => setIsEditingQuota(!isEditingQuota)}
                                                     className="text-sm text-[#2A9D8F] hover:text-[#3FD0B6] font-medium"
                                                 >
@@ -323,10 +382,10 @@ export default function PerfilUsuario() {
                                                 </button>
                                             )}
                                         </div>
-                                        
+
                                         <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                                            <div 
-                                                className="bg-[#3FD0B6] h-2.5 rounded-full transition-all duration-500" 
+                                            <div
+                                                className="bg-[#3FD0B6] h-2.5 rounded-full transition-all duration-500"
                                                 style={{ width: `${Math.min(100, ((scholarProfile.usedStorage || 0) / (scholarProfile.storageQuota || 1)) * 100)}%` }}
                                             ></div>
                                         </div>
@@ -339,14 +398,14 @@ export default function PerfilUsuario() {
                                             <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                                                 <label className="block text-xs font-medium text-gray-700 mb-2">Nueva Cuota</label>
                                                 <div className="flex space-x-2">
-                                                    <input 
-                                                        type="number" 
+                                                    <input
+                                                        type="number"
                                                         value={newQuota}
                                                         onChange={(e) => setNewQuota(e.target.value)}
                                                         placeholder="Ej: 500"
                                                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6]"
                                                     />
-                                                    <select 
+                                                    <select
                                                         value={quotaUnit}
                                                         onChange={(e) => setQuotaUnit(e.target.value)}
                                                         className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3FD0B6]"
@@ -354,7 +413,7 @@ export default function PerfilUsuario() {
                                                         <option value="MB">MB</option>
                                                         <option value="GB">GB</option>
                                                     </select>
-                                                    <button 
+                                                    <button
                                                         onClick={handleUpdateQuota}
                                                         className="px-4 py-2 bg-[#2A9D8F] text-white rounded-lg hover:bg-[#238276] transition-colors"
                                                     >
@@ -379,7 +438,7 @@ export default function PerfilUsuario() {
                                         </div>
                                         <h3 className="text-xl font-semibold text-gray-800">Historial Académico</h3>
                                     </div>
-                                    
+
                                     {evaluaciones.length === 0 ? (
                                         <div className="text-center py-4 text-gray-500">
                                             No hay evaluaciones registradas.

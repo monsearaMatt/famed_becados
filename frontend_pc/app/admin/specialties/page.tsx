@@ -24,7 +24,7 @@ export default function AdminSpecialtiesPage() {
     }, []);
 
     return (
-        <div className="bg-gradient-to-br from-[#3FD0B6] to-[#2A9D8F] min-h-screen flex flex-col">
+        <div className="theme-gradient min-h-screen flex flex-col">
             <Navbar title="Gestión de Especialidades" subtitle="Administración" />
 
             <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
@@ -33,14 +33,14 @@ export default function AdminSpecialtiesPage() {
                     <div className="flex gap-4">
                         <button
                             onClick={() => router.push("/admin/users/new")}
-                            className="bg-white text-[#2A9D8F] px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-gray-50 transition-all transform hover:scale-105 flex items-center"
+                            className="theme-button-secondary px-6 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-all transform hover:scale-105 flex items-center"
                         >
                             <span className="text-2xl mr-2">👤</span>
                             Nuevo Usuario
                         </button>
                         <button
                             onClick={() => router.push("/admin/specialties/new")}
-                            className="bg-white text-[#2A9D8F] px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-gray-50 transition-all transform hover:scale-105 flex items-center"
+                            className="theme-button-secondary px-6 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-all transform hover:scale-105 flex items-center"
                         >
                             <span className="text-2xl mr-2">+</span>
                             Nueva Especialidad
@@ -56,27 +56,27 @@ export default function AdminSpecialtiesPage() {
                             <div
                                 key={spec.id}
                                 onClick={() => router.push(`/admin/specialties/${spec.id}`)}
-                                className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-2 border-transparent hover:border-white/50 group"
+                                className="theme-card rounded-2xl p-6 shadow-xl cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group"
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="w-12 h-12 bg-[#3FD0B6]/20 rounded-xl flex items-center justify-center group-hover:bg-[#3FD0B6] transition-colors duration-300">
                                         <span className="text-2xl">🏥</span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="block text-gray-600 text-xs font-medium">ID: {spec.id.slice(-4)}</span>
+                                        <span className="block theme-text-muted text-xs font-medium">ID: {spec.id.slice(-4)}</span>
                                         {spec.startYear && (
-                                            <span className="block text-[#2A9D8F] font-bold text-sm mt-1">
+                                            <span className="block text-[#3FD0B6] font-bold text-sm mt-1">
                                                 {spec.startYear}
                                             </span>
                                         )}
                                     </div>
                                 </div>
-                                
-                                <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-[#2A9D8F] transition-colors">
+
+                                <h3 className="text-xl font-bold theme-text-heading mb-2 group-hover:text-[#3FD0B6] transition-colors">
                                     {spec.name}{spec.startYear ? ` (${spec.startYear})` : ''}
                                 </h3>
-                                
-                                <div className="flex items-center text-gray-700 text-sm font-medium">
+
+                                <div className="flex items-center theme-text-muted text-sm font-medium">
                                     <span>Ver detalles y participantes →</span>
                                 </div>
                             </div>
@@ -87,3 +87,4 @@ export default function AdminSpecialtiesPage() {
         </div>
     );
 }
+

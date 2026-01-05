@@ -6,11 +6,25 @@ import { specialtyService, Specialty, Cohort, JefeEspecialidadData } from '@/lib
 import { doctorCohortService, DoctorCohortAssignment } from '@/lib/services/doctorCohortService';
 import { userService, User } from '@/lib/services/userService';
 
-// Helper para formatear fecha a YYYY-MM-DD
+// Helper para formatear fecha a YYYY-MM-DD (preserving UTC date)
 const formatDateForInput = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '';
+  // Parse as UTC and format in UTC to avoid timezone shifts
   const date = new Date(dateStr);
-  return date.toISOString().split('T')[0];
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper para mostrar fecha en formato local DD-MM-YYYY (preserving UTC date)
+const formatDateForDisplay = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  return `${day}-${month}-${year}`;
 };
 
 // Helper para obtener color del badge según status
@@ -50,6 +64,11 @@ export default function AdminSpecialtyDetailsPage() {
   const [editStartDate, setEditStartDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [savingCohort, setSavingCohort] = useState(false);
+
+  // Estado para editar nombre de especialidad
+  const [editingName, setEditingName] = useState(false);
+  const [newSpecialtyName, setNewSpecialtyName] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   // Estado para modal de edición de cohortes de doctor
   const [editingDoctorCohorts, setEditingDoctorCohorts] = useState<{
@@ -282,13 +301,89 @@ export default function AdminSpecialtyDetailsPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
         <button
-          onClick={() => router.push('/admin/specialties')}
+          onClick={() => router.replace('/admin/specialties')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <span className="mr-2">←</span>
           Volver a Especialidades
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">{specialty.name}{specialty.startYear ? ` (${specialty.startYear})` : ''}</h1>
+        <div className="flex items-center gap-3">
+          {editingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newSpecialtyName}
+                onChange={(e) => setNewSpecialtyName(e.target.value)}
+                className="text-2xl font-bold text-gray-900 px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+              />
+              <button
+                onClick={async () => {
+                  if (!newSpecialtyName.trim()) {
+                    alert('El nombre no puede estar vacío');
+                    return;
+                  }
+                  setSavingName(true);
+                  try {
+                    await specialtyService.updateSpecialty(id, newSpecialtyName.trim());
+                    setSpecialty(prev => prev ? { ...prev, name: newSpecialtyName.trim() } : null);
+                    setEditingName(false);
+                  } catch (error: any) {
+                    alert(error.message || 'Error al actualizar el nombre');
+                  } finally {
+                    setSavingName(false);
+                  }
+                }}
+                disabled={savingName}
+                className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                title="Guardar"
+              >
+                {savingName ? '⏳' : '✓'}
+              </button>
+              <button
+                onClick={() => {
+                  setEditingName(false);
+                  setNewSpecialtyName(specialty?.name || '');
+                }}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-full"
+                title="Cancelar"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-gray-900">{specialty.name}{specialty.startYear ? ` (${specialty.startYear})` : ''}</h1>
+              <button
+                onClick={() => {
+                  setNewSpecialtyName(specialty?.name || '');
+                  setEditingName(true);
+                }}
+                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                title="Editar nombre"
+              >
+                ✏️
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('¿Estás seguro de que deseas eliminar esta especialidad? Esta acción eliminará también todos los cortes, catálogos de procedimientos, asignaciones de doctores y jefes asociados.')) {
+                    return;
+                  }
+                  try {
+                    await specialtyService.deleteSpecialty(id);
+                    router.push('/admin/specialties');
+                  } catch (error: any) {
+                    alert(error.message || 'Error al eliminar la especialidad');
+                  }
+                }}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                title="Eliminar especialidad"
+              >
+                🗑️
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex space-x-4 border-b border-gray-200 mb-6">
@@ -463,7 +558,7 @@ export default function AdminSpecialtyDetailsPage() {
                               </span>
                               {cohort.startDate && cohort.endDate && (
                                 <span className="text-xs text-gray-500">
-                                  {new Date(cohort.startDate).toLocaleDateString('es-CL')} - {new Date(cohort.endDate).toLocaleDateString('es-CL')}
+                                  {formatDateForDisplay(cohort.startDate)} - {formatDateForDisplay(cohort.endDate)}
                                 </span>
                               )}
                             </div>

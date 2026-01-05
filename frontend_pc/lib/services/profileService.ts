@@ -351,12 +351,9 @@ export const profileService = {
       body: JSON.stringify({ password }),
     });
 
-    if (!response.ok) {
-      throw new Error('Error al actualizar la contraseña');
-    }
-
     const data = await response.json();
-    if (!data.success) {
+
+    if (!response.ok || !data.success) {
       throw new Error(data.message || 'Error al actualizar la contraseña');
     }
   },

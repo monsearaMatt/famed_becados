@@ -15,8 +15,16 @@ export default function AdminUserCreatePage() {
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [successData, setSuccessData] = useState<{
+    rut: string;
+    password: string;
+    role: string;
+    fullName: string;
+    specialtyName?: string;
+    warning?: string;
+  } | null>(null);
 
   // Para selección de cohortes cuando es doctor
   const [availableCohorts, setAvailableCohorts] = useState<Cohort[]>([]);
@@ -154,7 +162,7 @@ export default function AdminUserCreatePage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(null);
+    setSuccessData(null);
 
     try {
       // 1. Create User in Auth Service
@@ -175,8 +183,16 @@ export default function AdminUserCreatePage() {
       });
 
       if (!authResponse.ok) {
-        const errorData = await authResponse.json();
-        throw new Error(errorData.message || 'Error al crear usuario en Auth Service');
+        const errorText = await authResponse.text();
+        let errorMessage = 'Error al crear usuario en Auth Service';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Respuesta no JSON del servidor:', errorText);
+          errorMessage = errorText ? `Error del servidor: ${errorText.substring(0, 100)}` : `Error ${authResponse.status}: ${authResponse.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const authData = await authResponse.json();
@@ -278,7 +294,17 @@ export default function AdminUserCreatePage() {
           } catch (cohortError) {
             console.error('Error assigning cohorts to doctor:', cohortError);
             // No fallar completamente, solo advertir
-            setSuccess(`Usuario creado exitosamente.\nRUT: ${formData.rut}\nContraseña temporal: ${tempPassword}\n\n⚠️ Nota: No se pudieron asignar los cohortes automáticamente. Puede asignarlos desde la configuración del doctor.`);
+            // No fallar completamente, solo advertir
+            const specName = specialties.find(s => s.id === formData.specialtyId)?.name || '';
+            setSuccessData({
+              rut: formData.rut,
+              password: tempPassword,
+              role: formData.role,
+              fullName: formData.fullName,
+              specialtyName: specName,
+              warning: 'No se pudieron asignar los cohortes automáticamente. Puede asignarlos desde la configuración del doctor.'
+            });
+
             setFormData({
               rut: '',
               fullName: '',
@@ -302,7 +328,16 @@ export default function AdminUserCreatePage() {
         } catch (assignError) {
           console.error('Error auto-assigning jefe to specialty:', assignError);
           // Don't fail the whole process, just warn
-          setSuccess(`Usuario creado exitosamente.\nRUT: ${formData.rut}\nContraseña temporal: ${tempPassword}\n\n⚠️ Nota: No se pudo asignar automáticamente a la especialidad. Asígnelo manualmente desde la sección "Jefes de Especialidad".`);
+          const specName = specialties.find(s => s.id === preSelectedSpecialtyId)?.name || '';
+          setSuccessData({
+            rut: formData.rut,
+            password: tempPassword,
+            role: formData.role,
+            fullName: formData.fullName,
+            specialtyName: specName,
+            warning: 'No se pudo asignar automáticamente a la especialidad. Asígnelo manualmente desde la sección "Jefes de Especialidad".'
+          });
+
           // Mantener specialtyId y entryYear si venimos de una especialidad
           setFormData({
             rut: '',
@@ -317,7 +352,18 @@ export default function AdminUserCreatePage() {
         }
       }
 
-      setSuccess(`Usuario creado exitosamente.\nRUT: ${formData.rut}\nContraseña temporal: ${tempPassword}`);
+      const specName = formData.specialtyId
+        ? specialties.find(s => s.id === formData.specialtyId)?.name
+        : undefined;
+
+      setSuccessData({
+        rut: formData.rut,
+        password: tempPassword,
+        role: formData.role,
+        fullName: formData.fullName,
+        specialtyName: specName
+      });
+
       // Mantener specialtyId y entryYear si venimos de una especialidad
       setFormData({
         rut: '',
@@ -352,11 +398,115 @@ export default function AdminUserCreatePage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 p-4 rounded-md">
-            <p className="font-bold text-lg">¡Éxito!</p>
-            <p className="whitespace-pre-line">{success}</p>
-            <p className="text-sm mt-2 text-green-600">Guarde esta contraseña, no se volverá a mostrar.</p>
+        {successData && (
+          <div className="mb-8 bg-white border border-gray-100 rounded-xl shadow-lg run-animation slide-in-from-top-4 overflow-hidden">
+            {/* Header Strip */}
+            <div className="bg-gradient-to-r from-green-600 to-green-500 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+                  <span className="text-xl">✅</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white tracking-wide leading-none">Usuario Creado</h3>
+                  <p className="text-green-50 text-xs font-medium mt-1 opacity-90">El perfil ha sido registrado correctamente</p>
+                </div>
+              </div>
+              <span className="hidden sm:inline-block text-green-700 text-xs font-bold px-3 py-1 bg-white/90 rounded-full shadow-sm">
+                Activo
+              </span>
+            </div>
+
+            <div className="p-6 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* User Details Column */}
+                <div className="space-y-6">
+                  <h4 className="text-xs uppercase tracking-wider text-gray-400 font-bold border-b border-gray-100 pb-2">Datos Personales</h4>
+
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Nombre Completo</span>
+                    <span className="text-xl font-medium text-gray-900 tracking-tight">{successData.fullName}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">RUT</span>
+                      <span className="text-base text-gray-700 font-mono bg-gray-50 px-2 py-1 rounded inline-block border border-gray-100">
+                        {successData.rut}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Rol</span>
+                      <span className="text-base text-blue-600 bg-blue-50 font-medium capitalize px-3 py-1 rounded-full inline-block border border-blue-100">
+                        {successData.role.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {successData.specialtyName && (
+                    <div className="pt-2">
+                      <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Especialidad</span>
+                      <div className="flex items-center gap-2 text-gray-800">
+                        <span className="text-lg">🩺</span>
+                        <span className="text-base font-medium">{successData.specialtyName}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Credentials Column */}
+                <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 flex flex-col h-full relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full -mr-8 -mt-8"></div>
+
+                  <div>
+                    <h4 className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-4 flex items-center gap-2">
+                      <span>🔐</span> Credenciales de Acceso
+                    </h4>
+
+                    <div className="bg-white border border-slate-200 rounded-lg p-1 shadow-sm mb-4">
+                      <div className="flex items-center justify-between p-1 pl-3 bg-white rounded-lg">
+                        <code className="text-xl font-mono font-bold text-slate-700 tracking-wider">
+                          {successData.password}
+                        </code>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(successData.password);
+                            const btn = document.getElementById('copy-btn-inner');
+                            if (btn) {
+                              const original = btn.innerHTML;
+                              btn.innerHTML = '<span class="text-green-600 font-bold text-xs">¡Copiado!</span>';
+                              setTimeout(() => { btn.innerHTML = original; }, 2000);
+                            }
+                          }}
+                          className="ml-4 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-transparent hover:border-blue-200 px-3 py-2 rounded-md transition-all active:scale-95"
+                          title="Copiar contraseña"
+                          type="button"
+                        >
+                          <span id="copy-btn-inner" className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide">
+                            <span>Copiar</span> 📋
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-4 text-center">
+                    <p className="text-xs text-red-500 font-medium bg-red-50 py-2 px-3 rounded-full inline-block border border-red-100">
+                      ⚠️ Esta contraseña solo se mostrará una vez
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {successData.warning && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                  <span className="text-xl">⚠️</span>
+                  <div>
+                    <h5 className="font-bold text-amber-800 text-sm mb-1">Información Adicional</h5>
+                    <p className="text-amber-700 text-sm">{successData.warning}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -4,6 +4,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --muted-text: #6b7280;
+  --heading-text: #111827;
 }
 
 @theme inline {
@@ -13,11 +17,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark mode variables - controlled by .dark class on html element */
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card-bg: #1a1a1a;
+  --card-border: #333333;
+  --muted-text: #9ca3af;
+  --heading-text: #f3f4f6;
 }
 
 body {
@@ -26,12 +33,451 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* =========================================
+   Theme Utility Classes
+   These automatically adapt to light/dark mode
+   ========================================= */
+
+/* Main gradient background */
+.theme-gradient {
+  background: linear-gradient(135deg, #3FD0B6 0%, #2A9D8F 100%);
+}
+
+html.dark {
+  .theme-gradient {
+    background: linear-gradient(135deg, #1a5c52 0%, #144d45 100%);
+  }
+}
+
+/* Card component */
+.theme-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 2px solid transparent;
+}
+
+.theme-card:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+html.dark {
+  .theme-card {
+    background-color: rgba(26, 26, 26, 0.95);
+    border-color: rgba(51, 51, 51, 0.5);
+  }
+
+  .theme-card:hover {
+    border-color: rgba(63, 208, 182, 0.5);
+  }
+}
+
+/* Secondary button (white in light, dark in dark) */
+.theme-button-secondary {
+  background-color: white;
+  color: #2A9D8F;
+}
+
+html.dark {
+  .theme-button-secondary {
+    background-color: #1a1a1a;
+    color: #3FD0B6;
+  }
+}
+
+/* Text utilities */
+.theme-text-heading {
+  color: #111827;
+}
+
+.theme-text-muted {
+  color: #6b7280;
+}
+
+html.dark {
+  .theme-text-heading {
+    color: #f3f4f6;
+  }
+
+  .theme-text-muted {
+    color: #9ca3af;
+  }
+}
+
+/* Panel/Container component */
+.theme-panel {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+html.dark {
+  .theme-panel {
+    background-color: #111827;
+    border-color: #1f2937;
+  }
+}
+
+/* Dark panel - always dark but adapts slightly */
+.theme-panel-dark {
+  background-color: #1f2937;
+  color: white;
+}
+
+html.dark {
+  .theme-panel-dark {
+    background-color: #111827;
+  }
+}
+
+/* Action card - clickable cards for dashboards */
+.theme-card-action {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+}
+
+.theme-card-action:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+html.dark {
+  .theme-card-action {
+    background: linear-gradient(135deg, #1f1f1f 0%, #252525 100%);
+    border-color: #374151;
+  }
+
+  .theme-card-action:hover {
+    border-color: inherit;
+  }
+}
+
+/* Dark mode overrides for admin components */
+html.dark {
+
+  /* Main teal gradient background - make darker in dark mode */
+  .bg-gradient-to-br.from-\[\#3FD0B6\].to-\[\#2A9D8F\],
+  .bg-gradient-to-b.from-\[\#3FD0B6\].to-\[\#2A9D8F\],
+  .bg-gradient-to-r.from-\[\#3FD0B6\].to-\[\#2A9D8F\] {
+    background: linear-gradient(135deg, #1a5c52 0%, #144d45 100%) !important;
+  }
+
+  /* Cards and containers */
+  .bg-white {
+    background-color: var(--card-bg) !important;
+  }
+
+  /* White-to-gray card gradients - common pattern */
+  .bg-gradient-to-br.from-white.to-gray-50,
+  .bg-gradient-to-br.from-gray-50.to-white {
+    background: linear-gradient(135deg, #1f1f1f 0%, #252525 100%) !important;
+  }
+
+  /* Gray gradient variations */
+  .from-gray-50 {
+    --tw-gradient-from: #1f1f1f !important;
+  }
+
+  .to-gray-50 {
+    --tw-gradient-to: #252525 !important;
+  }
+
+  /* Borders */
+  .border-gray-200,
+  .border-gray-300 {
+    border-color: var(--card-border) !important;
+  }
+
+  .divide-gray-200>*+* {
+    border-color: var(--card-border) !important;
+  }
+
+  /* Text colors - comprehensive list */
+  .text-gray-900,
+  .text-gray-800 {
+    color: var(--heading-text) !important;
+  }
+
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500,
+  .text-gray-400 {
+    color: var(--muted-text) !important;
+  }
+
+  /* Table headers and subtle backgrounds */
+  .bg-gray-50 {
+    background-color: #1f1f1f !important;
+  }
+
+  /* Hover states */
+  .hover\:bg-gray-50:hover {
+    background-color: #252525 !important;
+  }
+
+  .hover\:bg-blue-50\/30:hover {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+  }
+
+  /* Inputs */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    background-color: var(--card-bg) !important;
+    color: var(--foreground) !important;
+    border-color: var(--card-border) !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-text) !important;
+  }
+
+  /* Select options */
+  select option {
+    background-color: var(--card-bg) !important;
+    color: var(--foreground) !important;
+  }
+
+  /* Info boxes */
+  .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+  }
+
+  .bg-yellow-50 {
+    background-color: rgba(234, 179, 8, 0.15) !important;
+  }
+
+  .bg-gray-100 {
+    background-color: #252525 !important;
+  }
+
+  .bg-gray-200 {
+    background-color: #2a2a2a !important;
+  }
+
+  /* Status badges - adjust for dark mode readability */
+  /* Green badges */
+  .bg-green-100 {
+    background-color: rgba(34, 197, 94, 0.25) !important;
+  }
+
+  .text-green-800,
+  .text-green-700,
+  .text-green-600 {
+    color: #4ade80 !important;
+    /* Bright green for dark mode */
+  }
+
+  .border-green-200 {
+    border-color: rgba(34, 197, 94, 0.4) !important;
+  }
+
+  /* Red badges */
+  .bg-red-100 {
+    background-color: rgba(239, 68, 68, 0.25) !important;
+  }
+
+  .text-red-800,
+  .text-red-700,
+  .text-red-600 {
+    color: #f87171 !important;
+    /* Bright red for dark mode */
+  }
+
+  /* Purple badges */
+  .bg-purple-100,
+  .bg-purple-50 {
+    background-color: rgba(168, 85, 247, 0.25) !important;
+  }
+
+  .text-purple-800,
+  .text-purple-700,
+  .text-purple-600 {
+    color: #c084fc !important;
+    /* Bright purple for dark mode */
+  }
+
+  .border-purple-200 {
+    border-color: rgba(168, 85, 247, 0.4) !important;
+  }
+
+  /* Blue badges */
+  .bg-blue-100 {
+    background-color: rgba(59, 130, 246, 0.25) !important;
+  }
+
+  .text-blue-800,
+  .text-blue-700,
+  .text-blue-600 {
+    color: #60a5fa !important;
+    /* Bright blue for dark mode */
+  }
+
+  .border-blue-200 {
+    border-color: rgba(59, 130, 246, 0.4) !important;
+  }
+
+  /* Yellow/Amber badges */
+  .bg-yellow-100,
+  .bg-yellow-50,
+  .bg-amber-100,
+  .bg-amber-50 {
+    background-color: rgba(234, 179, 8, 0.25) !important;
+  }
+
+  .text-yellow-800,
+  .text-yellow-700,
+  .text-amber-800,
+  .text-amber-700 {
+    color: #fbbf24 !important;
+    /* Bright yellow for dark mode */
+  }
+
+  /* Orange badges */
+  .bg-orange-100 {
+    background-color: rgba(249, 115, 22, 0.25) !important;
+  }
+
+  .text-orange-800,
+  .text-orange-700,
+  .text-orange-600 {
+    color: #fb923c !important;
+    /* Bright orange for dark mode */
+  }
+
+  /* Teal badges */
+  .bg-teal-100 {
+    background-color: rgba(20, 184, 166, 0.25) !important;
+  }
+
+  .text-teal-800,
+  .text-teal-700,
+  .text-teal-600 {
+    color: #2dd4bf !important;
+    /* Bright teal for dark mode */
+  }
+
+  .border-teal-200 {
+    border-color: rgba(20, 184, 166, 0.4) !important;
+  }
+
+  /* Indigo badges */
+  .bg-indigo-100,
+  .bg-indigo-50 {
+    background-color: rgba(99, 102, 241, 0.25) !important;
+  }
+
+  .text-indigo-800,
+  .text-indigo-700,
+  .text-indigo-600 {
+    color: #a5b4fc !important;
+    /* Bright indigo for dark mode */
+  }
+
+  .border-indigo-200 {
+    border-color: rgba(99, 102, 241, 0.4) !important;
+  }
+
+  /* Dashed borders for add buttons */
+  .border-dashed.border-gray-300 {
+    border-color: #444 !important;
+  }
+
+  .hover\:border-\[\#3FD0B6\]:hover {
+    border-color: #3FD0B6 !important;
+  }
+
+  /* Modals backdrop already dark, make content visible */
+  .fixed .bg-white {
+    background-color: var(--card-bg) !important;
+  }
+
+  /* Shadow adjustments */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Slate colors - used in modern card components */
+  .bg-slate-50 {
+    background-color: #1f2937 !important;
+  }
+
+  .bg-slate-100 {
+    background-color: #374151 !important;
+  }
+
+  .bg-slate-200 {
+    background-color: #4b5563 !important;
+  }
+
+  .border-slate-100 {
+    border-color: #374151 !important;
+  }
+
+  .border-slate-200 {
+    border-color: #4b5563 !important;
+  }
+
+  .text-slate-500 {
+    color: #9ca3af !important;
+  }
+
+  .text-slate-600 {
+    color: #d1d5db !important;
+  }
+
+  .text-slate-700 {
+    color: #e5e7eb !important;
+  }
+
+  /* Border gray-100 override */
+  .border-gray-100 {
+    border-color: #374151 !important;
+  }
+
+  /* Red info box improvements */
+  .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+  }
+
+  .border-red-100 {
+    border-color: rgba(239, 68, 68, 0.3) !important;
+  }
+
+  .border-red-200 {
+    border-color: rgba(239, 68, 68, 0.4) !important;
+  }
+
+  /* Blue improvements */
+  .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+  }
+
+  .border-blue-100 {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+  }
+
+  /* Green header gradient already handled */
+
+  /* Success card green header - darker in dark mode */
+  .bg-gradient-to-r.from-green-600.to-green-500 {
+    background: linear-gradient(to right, #166534, #15803d) !important;
+  }
+}
+
 /* Toast animation */
 @keyframes slide-in {
   from {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -48,6 +494,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

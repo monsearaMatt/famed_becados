@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { specialtyService, JefeEspecialidadData } from "@/lib/services/specialtyService";
+import { useTheme } from "@/context/ThemeContext";
 
 // ============================================
 // TYPES & INTERFACES
@@ -46,7 +47,8 @@ const ROLE_CONFIGS: Record<string, NavbarConfig> = {
             { label: "Dashboard", icon: "📊", path: "/admin/dashboard" },
             { label: "Usuarios", icon: "👥", path: "/admin/listain" },
             { label: "Especialidades", icon: "🏥", path: "/admin/specialties" },
-            { label: "Exportar", icon: "📤", path: "/admin/export" },
+            { label: "Asignación Médicos", icon: "👨‍⚕️", path: "/admin/doctors" },
+            { label: "Exportar", icon: "📤", path: "/admin/exportar" },
         ]
     },
     admin_readonly: {
@@ -97,11 +99,11 @@ const ROLE_CONFIGS: Record<string, NavbarConfig> = {
 
 // Hidden back button paths
 const HIDDEN_BACK_PATHS = [
-    '/', 
-    '/login', 
-    '/jefe/areapersonal', 
+    '/',
+    '/login',
+    '/jefe/areapersonal',
     '/admin/dashboard',
-    '/admin/listain', 
+    '/admin/listain',
     '/admin/visual',
     '/doctor/dashboard',
     '/becado/dashboard'
@@ -111,10 +113,28 @@ const HIDDEN_BACK_PATHS = [
 const SELECTED_SPECIALTY_KEY = 'selectedSpecialtyId';
 
 // ============================================
+// THEME TOGGLE BUTTON COMPONENT
+// ============================================
+
+const ThemeToggleButton: React.FC = () => {
+    const { resolvedTheme, toggleTheme } = useTheme();
+
+    return (
+        <button
+            onClick={toggleTheme}
+            className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-2 text-white text-lg backdrop-blur-sm"
+            title={resolvedTheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+            {resolvedTheme === 'dark' ? '☀️' : '🌙'}
+        </button>
+    );
+};
+
+// ============================================
 // NAVBAR COMPONENT
 // ============================================
 
-const Navbar: React.FC<NavbarProps> = ({ 
+const Navbar: React.FC<NavbarProps> = ({
     title,
     subtitle,
     showProfile = true,
@@ -124,17 +144,17 @@ const Navbar: React.FC<NavbarProps> = ({
     const router = useRouter();
     const pathname = usePathname();
     const { user, logout } = useAuth();
-    
+
     // Dropdown states
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isNavDropdownOpen, setIsNavDropdownOpen] = useState(false);
     const [isSpecialtyDropdownOpen, setIsSpecialtyDropdownOpen] = useState(false);
-    
+
     // Refs for click outside
     const profileDropdownRef = useRef<HTMLDivElement>(null);
     const navDropdownRef = useRef<HTMLDivElement>(null);
     const specialtyDropdownRef = useRef<HTMLDivElement>(null);
-    
+
     // Specialty state for jefes
     const [mySpecialties, setMySpecialties] = useState<JefeEspecialidadData[]>([]);
     const [selectedSpecialty, setSelectedSpecialty] = useState<JefeEspecialidadData | null>(null);
@@ -156,12 +176,12 @@ const Navbar: React.FC<NavbarProps> = ({
     useEffect(() => {
         const loadSpecialties = async () => {
             if (user?.rol !== 'jefe_especialidad' || !config.showSpecialtySelector) return;
-            
+
             setLoadingSpecialties(true);
             try {
                 const specialties = await specialtyService.getMySpecialties();
                 setMySpecialties(specialties);
-                
+
                 // Load selected from localStorage
                 const savedSpecialtyId = localStorage.getItem(SELECTED_SPECIALTY_KEY);
                 if (savedSpecialtyId) {
@@ -189,7 +209,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 setLoadingSpecialties(false);
             }
         };
-        
+
         loadSpecialties();
     }, [user?.rol, config.showSpecialtySelector]);
 
@@ -212,8 +232,8 @@ const Navbar: React.FC<NavbarProps> = ({
     }, []);
 
     // Determine if back button should be shown
-    const shouldShowBack = showBackButton !== undefined 
-        ? showBackButton 
+    const shouldShowBack = showBackButton !== undefined
+        ? showBackButton
         : !HIDDEN_BACK_PATHS.includes(pathname);
 
     // Handlers
@@ -244,10 +264,10 @@ const Navbar: React.FC<NavbarProps> = ({
         localStorage.setItem('selectedSpecialtyName', specialty.specialtyName);
         localStorage.setItem('selectedSpecialtyYear', specialty.startYear?.toString() || '');
         setIsSpecialtyDropdownOpen(false);
-        
+
         // Dispatch custom event to notify components about specialty change
-        window.dispatchEvent(new CustomEvent('specialtyChanged', { 
-            detail: { specialtyId: specialty.specialtyId, specialty } 
+        window.dispatchEvent(new CustomEvent('specialtyChanged', {
+            detail: { specialtyId: specialty.specialtyId, specialty }
         }));
     };
 
@@ -259,7 +279,7 @@ const Navbar: React.FC<NavbarProps> = ({
             {/* Left side: Back button + Profile info */}
             <div className="flex items-center space-x-3">
                 {shouldShowBack && (
-                    <button 
+                    <button
                         onClick={() => router.back()}
                         className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-2 text-white text-lg backdrop-blur-sm mr-2"
                         title="Volver atrás"
@@ -287,11 +307,10 @@ const Navbar: React.FC<NavbarProps> = ({
                         <button
                             key={item.path}
                             onClick={() => handleNavItemClick(item.path)}
-                            className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                                pathname === item.path || pathname.startsWith(item.path + '/')
-                                    ? 'bg-white/30 text-white font-medium'
-                                    : 'text-white/80 hover:bg-white/20 hover:text-white'
-                            }`}
+                            className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 ${pathname === item.path || pathname.startsWith(item.path + '/')
+                                ? 'bg-white/30 text-white font-medium'
+                                : 'text-white/80 hover:bg-white/20 hover:text-white'
+                                }`}
                         >
                             <span>{item.icon}</span>
                             <span className="text-sm">{item.label}</span>
@@ -318,7 +337,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             <span className="text-lg">🏥</span>
                             <span className="text-sm font-medium max-w-[200px] truncate">
                                 {loadingSpecialties ? 'Cargando...' : (
-                                    selectedSpecialty 
+                                    selectedSpecialty
                                         ? `${selectedSpecialty.specialtyName}${selectedSpecialty.startYear ? ` ${selectedSpecialty.startYear}` : ''}`
                                         : 'Seleccionar'
                                 )}
@@ -327,7 +346,7 @@ const Navbar: React.FC<NavbarProps> = ({
                                 ▼
                             </span>
                         </button>
-                        
+
                         {isSpecialtyDropdownOpen && (
                             <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 animate-fade-in">
                                 <div className="px-4 py-2 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
@@ -337,11 +356,10 @@ const Navbar: React.FC<NavbarProps> = ({
                                     <button
                                         key={spec.id}
                                         onClick={() => handleSelectSpecialty(spec)}
-                                        className={`w-full px-4 py-3 text-left hover:bg-gray-100 flex items-center gap-3 transition-colors ${
-                                            selectedSpecialty?.specialtyId === spec.specialtyId 
-                                                ? 'bg-blue-50 text-blue-700' 
-                                                : 'text-gray-700'
-                                        }`}
+                                        className={`w-full px-4 py-3 text-left hover:bg-gray-100 flex items-center gap-3 transition-colors ${selectedSpecialty?.specialtyId === spec.specialtyId
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'text-gray-700'
+                                            }`}
                                     >
                                         <span className="text-lg">🏥</span>
                                         <div className="flex flex-col">
@@ -375,7 +393,7 @@ const Navbar: React.FC<NavbarProps> = ({
                         >
                             ☰
                         </button>
-                        
+
                         {isNavDropdownOpen && (
                             <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 animate-fade-in">
                                 <div className="px-4 py-2 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
@@ -385,11 +403,10 @@ const Navbar: React.FC<NavbarProps> = ({
                                     <button
                                         key={item.path}
                                         onClick={() => handleNavItemClick(item.path)}
-                                        className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-colors ${
-                                            pathname === item.path || pathname.startsWith(item.path + '/')
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'text-gray-700 hover:bg-gray-100'
-                                        }`}
+                                        className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-colors ${pathname === item.path || pathname.startsWith(item.path + '/')
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'text-gray-700 hover:bg-gray-100'
+                                            }`}
                                     >
                                         <span className="text-lg">{item.icon}</span>
                                         <span className="font-medium">{item.label}</span>
@@ -405,15 +422,18 @@ const Navbar: React.FC<NavbarProps> = ({
                     </div>
                 )}
 
+                {/* Theme toggle button */}
+                <ThemeToggleButton />
+
                 {/* Profile dropdown */}
                 <div className="relative" ref={profileDropdownRef}>
-                    <button 
+                    <button
                         onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                         className="bg-white/20 hover:bg-white/30 transition-all duration-300 rounded-full p-2 text-white text-lg backdrop-blur-sm"
                     >
                         👤
                     </button>
-                    
+
                     {isProfileDropdownOpen && (
                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 animate-fade-in">
                             <div className="px-4 py-2 border-b border-gray-100">
